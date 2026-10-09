@@ -2,18 +2,141 @@ import {
   beforeEach,
   describe,
   expect,
-  it
+  it,
+  vi
 } from 'vitest';
 
 import {
   MapaService
 } from './mapa.service';
 
+const respuestaSupabase = vi.hoisted(
+  () => ({
+    mapa: {
+      data: {
+        id: 'hippocampus-resort'
+      },
+      error: null
+    },
+    nodos: {
+      data: [] as object[],
+      error: null
+    },
+    conexiones: {
+      data: [] as object[],
+      error: null
+    }
+  })
+);
+
+vi.mock(
+  '@supabase/supabase-js',
+  () => ({
+    createClient: vi.fn(
+      () => ({
+        from: vi.fn(
+          (tabla: string) => {
+            if (tabla === 'mapas') {
+              return {
+                select: vi.fn(
+                  () => ({
+                    eq: vi.fn(
+                      () => ({
+                        maybeSingle:
+                          vi.fn()
+                            .mockImplementation(
+                              () => Promise.resolve(
+                                respuestaSupabase.mapa
+                              )
+                            )
+                      })
+                    )
+                  })
+                )
+              };
+            }
+
+            if (tabla === 'nodos') {
+              return {
+                select: vi.fn(
+                  () => ({
+                    eq: vi.fn(
+                      () => ({
+                        eq: vi.fn(
+                          () => ({
+                            order:
+                              vi.fn()
+                                .mockImplementation(
+                                  () => Promise.resolve(
+                                    respuestaSupabase.nodos
+                                  )
+                                )
+                          })
+                        )
+                      })
+                    )
+                  })
+                )
+              };
+            }
+
+            return {
+              select: vi.fn(
+                () => ({
+                  eq: vi.fn(
+                    () => ({
+                      order:
+                        vi.fn()
+                          .mockImplementation(
+                            () => Promise.resolve(
+                              respuestaSupabase.conexiones
+                            )
+                          )
+                    })
+                  )
+                })
+              )
+            };
+          }
+        )
+      })
+    )
+  })
+);
+
 describe('MapaService', () => {
   let servicio: MapaService;
 
   beforeEach(() => {
+    respuestaSupabase.mapa = {
+      data: {
+        id: 'hippocampus-resort'
+      },
+      error: null
+    };
+
+    respuestaSupabase.nodos = {
+      data: [],
+      error: null
+    };
+
+    respuestaSupabase.conexiones = {
+      data: [],
+      error: null
+    };
+
     servicio = new MapaService();
+  });
+
+  it('inicia usando el respaldo local', () => {
+    expect(
+      servicio.obtenerEstadoCarga()
+    ).toEqual({
+      origenActivo: 'local',
+      ultimaComprobacion: null,
+      ultimaCargaExitosa: null,
+      ultimoIntentoExitoso: null
+    });
   });
 
   it('entrega los nodos reales del mapa activo', () => {
@@ -50,7 +173,7 @@ describe('MapaService', () => {
       .toBe(3);
   });
 
-  it('entrega los niveles levantados', () => {
+  it('entrega los niveles y el piso levantados', () => {
     expect(
       servicio.obtenerNiveles()
     ).toEqual([1, 3, 4, 6]);
@@ -102,5 +225,99 @@ describe('MapaService', () => {
           'restaurant-faro-nivel-3'
       )
     ).toBe(false);
+  });
+
+  it('conserva el respaldo local si Supabase entrega datos incompletos', async () => {
+    const nodosLocales =
+      servicio.obtenerNodosNavegables();
+
+    vi.spyOn(
+      console,
+      'warn'
+    ).mockImplementation(() => undefined);
+
+    const resultado =
+      await servicio.cargarMapaDesdeSupabase();
+
+    expect(resultado).toBe(false);
+
+    expect(
+      servicio.obtenerNodosNavegables()
+    ).toEqual(nodosLocales);
+
+    const estado =
+      servicio.obtenerEstadoCarga();
+
+    expect(estado.origenActivo)
+      .toBe('local');
+
+    expect(estado.ultimoIntentoExitoso)
+      .toBe(false);
+
+    expect(estado.ultimaComprobacion)
+      .not.toBeNull();
+
+    expect(estado.ultimaCargaExitosa)
+      .toBeNull();
+  });
+
+  it('identifica Supabase solo después de cargar nodos y conexiones', async () => {
+    respuestaSupabase.nodos.data = [
+      {
+        id: 'entrada-nivel-4',
+        nombre: 'Entrada',
+        x: 0,
+        y: 0,
+        tipo: 'entrada',
+        nivel: 4,
+        sector: 'Acceso principal',
+        accesible: true,
+        restringido: false
+      },
+      {
+        id: 'recepcion-resort-nivel-4',
+        nombre: 'Recepción Resort',
+        x: 2,
+        y: 2,
+        tipo: 'recepcion',
+        nivel: 4,
+        sector: 'Recepciones',
+        accesible: true,
+        restringido: false
+      }
+    ];
+
+    respuestaSupabase.conexiones.data = [
+      {
+        origen_id: 'entrada-nivel-4',
+        destino_id:
+          'recepcion-resort-nivel-4',
+        distancia: 6.751,
+        tipo: 'pasillo',
+        accesible: true,
+        restringida: false,
+        habilitada: true
+      }
+    ];
+
+    const resultado =
+      await servicio.cargarMapaDesdeSupabase();
+
+    expect(resultado).toBe(true);
+
+    const estado =
+      servicio.obtenerEstadoCarga();
+
+    expect(estado.origenActivo)
+      .toBe('supabase');
+
+    expect(estado.ultimoIntentoExitoso)
+      .toBe(true);
+
+    expect(estado.ultimaComprobacion)
+      .not.toBeNull();
+
+    expect(estado.ultimaCargaExitosa)
+      .toBe(estado.ultimaComprobacion);
   });
 });
