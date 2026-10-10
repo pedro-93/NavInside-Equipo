@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
 
 import { NODOS_HIPPOCAMPUS } from '../data/mapa-simulado.data';
 import { HomePage } from './home.page';
@@ -59,6 +60,10 @@ describe('HomePage', () => {
       }
     ];
     component.pasoActualIndice = 0;
+    vi.spyOn(
+      component['rutaService'],
+      'calcularDistanciaTotal'
+    ).mockReturnValue(15.272);
 
     component.avanzarPaso();
     const indicacion = component.instruccionVozActual;
