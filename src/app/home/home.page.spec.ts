@@ -17,8 +17,8 @@ describe('HomePage', () => {
   });
 
   it('interpreta una solicitud hablada para completar origen y destino', () => {
-    component.lugares = NODOS_HIPPOCAMPUS;
     component.seleccionarIdioma('es');
+    component.lugares = NODOS_HIPPOCAMPUS;
     component.procesarComandoVozRuta(
       'Desde ascensor principal hasta gimnasio'
     );
@@ -30,8 +30,8 @@ describe('HomePage', () => {
   });
 
   it('da indicaciones habladas sin numeración y con distancia aproximada', () => {
-    component.lugares = NODOS_HIPPOCAMPUS;
     component.seleccionarIdioma('es');
+    component.lugares = NODOS_HIPPOCAMPUS;
     component.procesarComandoVozRuta(
       'Desde ascensor principal hasta gimnasio'
     );
