@@ -1,697 +1,928 @@
 import {
+
   ChangeDetectorRef,
+
   Component,
+
   OnDestroy,
+
   inject
+
 } from '@angular/core';
 
 import {
+
   CapacitorBarcodeScanner,
+
   CapacitorBarcodeScannerCameraDirection,
+
   CapacitorBarcodeScannerTypeHint
+
 } from '@capacitor/barcode-scanner';
 
 import {
+
   IonContent
+
 } from '@ionic/angular';
 
+
+
 import {
+
   MapaRutaComponent
+
 } from '../components/mapa-ruta/mapa-ruta.component';
 
 import {
+
   obtenerNombreNodo
+
 } from '../data/nombres-nodos.data';
 
 import {
+
   FotoDestino,
+
   FOTOS_DESTINOS
+
 } from '../data/fotos-destinos.data';
 
 import {
+
   Conexion,
+
   LugarPlano,
+
   Nodo
+
 } from '../models/nodo.model';
 
 import {
+
   AsistenteVozService
+
 } from '../services/asistente-voz.service';
 
 import {
+
   Idioma,
+
   IdiomaService
+
 } from '../services/idioma.service';
 
 import {
+
   MapaService
+
 } from '../services/mapa.service';
 
 import {
+
   MapaValidadorService,
+
   ProblemaMapa,
+
   ResultadoValidacionMapa
+
 } from '../services/mapa-validador.service';
 
 import {
+
   QrService
+
 } from '../services/qr.service';
 
 import {
+
   PasoRuta,
+
   RutaService
+
 } from '../services/ruta.service';
 
-type CampoSeleccionVoz =
-  | 'origen'
-  | 'destino';
+
+
+type CampoSeleccionVoz = 'origen' | 'destino';
 
 @Component({
+
   selector: 'app-home',
+
   templateUrl: 'home.page.html',
+
   styleUrls: ['home.page.scss'],
+
   standalone: true,
+
   imports: [
+
     MapaRutaComponent,
+
     IonContent
+
   ]
+
 })
+
 export class HomePage implements OnDestroy {
+
   private readonly rutaService =
+
     inject(RutaService);
 
   private readonly qrService =
+
     inject(QrService);
 
   private readonly idiomaService =
+
     inject(IdiomaService);
 
   private readonly asistenteVoz =
+
     inject(AsistenteVozService);
 
   private readonly changeDetectorRef =
+
     inject(ChangeDetectorRef);
 
   private readonly mapaService =
+
     inject(MapaService);
 
   private readonly mapaValidadorService =
+
     inject(MapaValidadorService);
 
+
+
   conexionesMapa: Conexion[] = [];
+
   lugares: Nodo[] = [];
+
   nodosMapa: Nodo[] = [];
+
   lugaresReferencia: LugarPlano[] = [];
 
+
+
   erroresMapa: ProblemaMapa[] = [];
+
   advertenciasMapa: ProblemaMapa[] = [];
+
   mapaEsValido = true;
 
+
+
   origen = '';
+
   destino = '';
+
   modoAccesible = false;
+
   idiomaSeleccionado: Idioma;
+
   mensajeUbicacion = '';
+
   resultado = '';
+
   distanciaTotal: number | null = null;
+
   rutaCalculada: Nodo[] = [];
+
   pasosRuta: PasoRuta[] = [];
+
   pasoActualIndice = 0;
+
   nivelVisualizado = 1;
+
   menuAbierto = false;
+
   recorridoAutomaticoActivo = false;
+
   asistenteVozActivo = false;
+
   comandoVozActivo = false;
+
   estadoComandoVoz = '';
-
-  campoSeleccionVozActivo:
-    CampoSeleccionVoz | null = null;
-
+  campoSeleccionVozActivo: CampoSeleccionVoz | null = null;
   estadoSeleccionVoz = '';
 
+
+
   private temporizadorRecorrido:
+
     ReturnType<typeof setTimeout> | null = null;
 
+
+
   constructor() {
+
     this.idiomaSeleccionado =
+
       this.idiomaService.idiomaActual;
 
+
+
     this.actualizarDatosMapa();
+
     void this.cargarMapaInicial();
+
   }
+
+
 
   ngOnDestroy(): void {
+
     this.detenerRecorridoAutomatico();
+
     this.asistenteVoz.detener();
+
   }
+
+
 
   get reconocimientoVozDisponible(): boolean {
-    return this.asistenteVoz
-      .reconocimientoDisponible;
+
+    return this.asistenteVoz.reconocimientoDisponible;
+
   }
 
-  get fotoDestinoSeleccionado():
-    FotoDestino | null {
-    return (
-      FOTOS_DESTINOS[this.destino] ??
-      null
-    );
+
+
+  get fotoDestinoSeleccionado(): FotoDestino | null {
+
+    return FOTOS_DESTINOS[this.destino] ?? null;
+
   }
 
-  fotoPuntoInteres(
-    nodoId: string
-  ): FotoDestino | null {
-    return (
-      FOTOS_DESTINOS[nodoId] ??
-      null
-    );
+
+
+  fotoPuntoInteres(nodoId: string): FotoDestino | null {
+
+    return FOTOS_DESTINOS[nodoId] ?? null;
+
   }
+
+
 
   get destinoSeleccionado(): Nodo | null {
-    return (
-      this.lugares.find(
-        lugar =>
-          lugar.id === this.destino
-      ) ?? null
-    );
+
+    return this.lugares.find(lugar => lugar.id === this.destino) ?? null;
+
   }
+
+
 
   get mensajeFotoDestino(): string {
+
     return this.esUltimoPaso
-      ? this.traducir(
-        'fotoDestinoLlegada'
-      )
-      : this.traducir(
-        'fotoDestinoSeleccionado'
-      );
+
+      ? this.traducir('fotoDestinoLlegada')
+
+      : this.traducir('fotoDestinoSeleccionado');
+
   }
+
+
 
   get origenId(): string | null {
+
     return this.origen || null;
+
   }
+
+
 
   get destinoId(): string | null {
+
     return this.destino || null;
+
   }
+
+
 
   get puntosInteresNivel(): Nodo[] {
+
     return this.lugares
+
       .filter(
+
         nodo =>
-          nodo.nivel ===
-            this.nivelVisualizado &&
+
+          nodo.nivel === this.nivelVisualizado &&
+
           ![
+
             'pasillo',
+
             'ascensor',
+
             'escalera',
+
             'rampa',
+
             'entrada'
+
           ].includes(nodo.tipo)
+
       )
+
       .sort(
-        (
-          primerLugar,
-          segundoLugar
-        ) =>
-          this.nombreNodo(
-            primerLugar
-          ).localeCompare(
-            this.nombreNodo(
-              segundoLugar
-            )
+
+        (primerLugar, segundoLugar) =>
+
+          this.nombreNodo(primerLugar).localeCompare(
+
+            this.nombreNodo(segundoLugar)
+
           )
+
       );
+
   }
+
+
 
   get pasoActual(): PasoRuta | null {
+
     return (
+
       this.pasosRuta[
+
         this.pasoActualIndice
+
       ] ?? null
+
     );
+
   }
+
+
 
   get instruccionActual(): string {
-    const paso =
-      this.pasoActual;
+
+    const paso = this.pasoActual;
+
+
 
     if (!paso) {
+
       return '';
+
     }
 
-    return this.obtenerInstruccionVisual(
-      paso
-    );
+
+
+    return this.obtenerInstruccionVisual(paso);
+
   }
+
+
 
   get instruccionVozActual(): string {
-    const paso =
-      this.pasoActual;
+
+    const paso = this.pasoActual;
+
+
 
     if (!paso) {
+
       return '';
+
     }
 
-    if (
-      paso.tipo === 'inicio' ||
-      paso.tipo === 'llegada'
-    ) {
-      return this.traducirPaso(
-        paso
-      );
+
+
+    if (paso.tipo === 'inicio' || paso.tipo === 'llegada') {
+
+      return this.traducirPaso(paso);
+
     }
 
-    if (
-      paso.tipo ===
-      'cambio-nivel'
-    ) {
-      return `${
-        this.traducir('ahora')
-      }. ${
-        this.traducirPaso(paso)
-      }`;
+
+
+    if (paso.tipo === 'cambio-nivel') {
+
+      return `${this.traducir('ahora')}. ${this.traducirPaso(paso)}`;
+
     }
 
-    const distanciaPaso =
-      paso.desde
-        ? this.rutaService
-          .calcularDistanciaTotal(
-            [
-              paso.desde,
-              paso.nodo
-            ]
-          )
-        : this.distanciaProximoTramo;
 
-    const metros =
-      Math.max(
-        1,
-        Math.round(
-          distanciaPaso
-        )
-      );
 
-    const direccion =
-      this.obtenerDireccionFisica(
-        paso
-      );
+    const distanciaPaso = paso.desde
+
+      ? this.rutaService.calcularDistanciaTotal([paso.desde, paso.nodo])
+
+      : this.distanciaProximoTramo;
+
+    const metros = Math.max(1, Math.round(distanciaPaso));
+
+    const direccion = this.obtenerDireccionFisica(paso);
+
+
 
     if (direccion) {
+
       return [
-        `${
-          this.traducir('ahora')
-        }.`,
-        this.obtenerInstruccionVisual(
-          paso
-        ),
-        this.traducir(
-          'avanzaAproximadamente',
-          { metros }
-        )
+
+        `${this.traducir('ahora')}.`,
+
+        this.obtenerInstruccionVisual(paso),
+
+        this.traducir('avanzaAproximadamente', { metros })
+
       ].join(' ');
+
     }
 
+
+
     return this.traducir(
+
       this.pasoActualIndice <= 1
+
         ? 'continuaAproximadamente'
+
         : 'luegoContinuaAproximadamente',
+
       {
+
         metros,
-        nombre:
-          this.nombreNodo(
-            paso.nodo
-          )
+
+        nombre: this.nombreNodo(paso.nodo)
+
       }
+
     );
+
   }
+
+
 
   get vozDisponible(): boolean {
-    return this.asistenteVoz
-      .disponible;
+
+    return this.asistenteVoz.disponible;
+
   }
+
+
 
   get estadoAsistenteVoz(): string {
+
     if (!this.vozDisponible) {
-      return this.traducir(
-        'asistenteVozNoDisponible'
-      );
+
+      return this.traducir('asistenteVozNoDisponible');
+
     }
+
+
 
     return this.traducir(
+
       this.asistenteVozActivo
+
         ? 'asistenteVozActivo'
+
         : 'asistenteVozListo'
+
     );
+
   }
 
-  get nodoActualId():
-    string | null {
+
+
+  get nodoActualId(): string | null {
+
     return (
+
       this.pasoActual?.nodo.id ??
+
       null
+
     );
+
   }
+
+
 
   get numeroPasoActual(): number {
-    if (
-      this.pasosRuta.length === 0
-    ) {
+
+    if (this.pasosRuta.length === 0) {
+
       return 0;
+
     }
 
-    return (
-      this.pasoActualIndice + 1
-    );
+
+
+    return this.pasoActualIndice + 1;
+
   }
+
+
 
   get totalPasos(): number {
+
     return this.pasosRuta.length;
+
   }
+
+
 
   get progresoRuta(): number {
-    if (
-      this.totalPasos === 0
-    ) {
+
+    if (this.totalPasos === 0) {
+
       return 0;
+
     }
+
+
 
     return Math.round(
+
       (
+
         this.numeroPasoActual /
+
         this.totalPasos
+
       ) * 100
+
     );
+
   }
+
+
 
   get distanciaRestante(): number {
+
     if (
-      this.rutaCalculada.length <
-        2 ||
+
+      this.rutaCalculada.length < 2 ||
+
       this.esUltimoPaso
+
     ) {
+
       return 0;
+
     }
 
-    return this.rutaService
-      .calcularDistanciaTotal(
-        this.rutaCalculada.slice(
-          this.pasoActualIndice
-        )
-      );
-  }
 
-  get distanciaProximoTramo():
-    number {
-    const tramoSiguiente =
+
+    return this.rutaService.calcularDistanciaTotal(
+
       this.rutaCalculada.slice(
+
+        this.pasoActualIndice
+
+      )
+
+    );
+
+  }
+
+
+
+  get distanciaProximoTramo(): number {
+
+    const tramoSiguiente =
+
+      this.rutaCalculada.slice(
+
         this.pasoActualIndice,
+
         this.pasoActualIndice + 2
+
       );
 
-    if (
-      tramoSiguiente.length < 2
-    ) {
+
+
+    if (tramoSiguiente.length < 2) {
+
       return 0;
+
     }
 
-    return this.rutaService
-      .calcularDistanciaTotal(
-        tramoSiguiente
-      );
+
+
+    return this.rutaService.calcularDistanciaTotal(
+
+      tramoSiguiente
+
+    );
+
   }
+
+
 
   get esPrimerPaso(): boolean {
-    return (
-      this.pasoActualIndice === 0
-    );
+
+    return this.pasoActualIndice === 0;
+
   }
+
+
 
   get esUltimoPaso(): boolean {
+
     return (
+
       this.totalPasos > 0 &&
+
       this.pasoActualIndice ===
+
         this.totalPasos - 1
+
     );
+
   }
 
-  get instruccionesRuta():
-    string[] {
+
+
+  get instruccionesRuta(): string[] {
+
     return this.pasosRuta.map(
+
       paso =>
+
         this.traducirPaso(paso)
+
     );
+
   }
+
+
 
   traducir(
+
     clave: string,
+
     parametros: Record<
+
       string,
+
       string | number
+
     > = {}
-  ): string {
-    return this.idiomaService
-      .traducir(
-        clave,
-        parametros
-      );
-  }
 
-  formatearMetros(
-    distancia: number
   ): string {
-    return new Intl.NumberFormat(
-      this.idiomaSeleccionado ===
-        'pt'
-        ? 'pt-BR'
-        : this.idiomaSeleccionado ===
-            'en'
-          ? 'en-US'
-          : 'es-CL',
-      {
-        maximumFractionDigits: 1,
-        minimumFractionDigits: 1
-      }
-    ).format(distancia);
-  }
 
-  nombreNodo(
-    nodo: Nodo
-  ): string {
-    return obtenerNombreNodo(
-      nodo.id,
-      this.idiomaSeleccionado,
-      nodo.nombre
+    return this.idiomaService.traducir(
+
+      clave,
+
+      parametros
+
     );
+
   }
+
+
+
+  formatearMetros(distancia: number): string {
+
+    return new Intl.NumberFormat(
+
+      this.idiomaSeleccionado === 'pt'
+
+        ? 'pt-BR'
+
+        : this.idiomaSeleccionado === 'en'
+
+          ? 'en-US'
+
+          : 'es-CL',
+
+      {
+
+        maximumFractionDigits: 1,
+
+        minimumFractionDigits: 1
+
+      }
+
+    ).format(distancia);
+
+  }
+
+
+
+  nombreNodo(nodo: Nodo): string {
+
+    return obtenerNombreNodo(
+
+      nodo.id,
+
+      this.idiomaSeleccionado,
+
+      nodo.nombre
+
+    );
+
+  }
+
+
 
   cambiarIdioma(): void {
-    this.idiomaService
-      .establecerIdioma(
-        this.idiomaSeleccionado
-      );
+
+    this.idiomaService.establecerIdioma(
+
+      this.idiomaSeleccionado
+
+    );
+
+
 
     this.actualizarDatosMapa();
+
     this.mensajeUbicacion = '';
 
-    if (
-      this.rutaCalculada.length >
-      0
-    ) {
+
+
+    if (this.rutaCalculada.length > 0) {
+
       this.actualizarResultadoRuta();
+
       this.anunciarInstruccionSiActiva();
+
       return;
+
     }
+
+
 
     this.resultado = '';
+
     this.distanciaTotal = null;
+
   }
 
-  seleccionarIdioma(
-    idioma: Idioma
-  ): void {
-    this.idiomaSeleccionado =
-      idioma;
+
+
+  seleccionarIdioma(idioma: Idioma): void {
+
+    this.idiomaSeleccionado = idioma;
 
     this.cambiarIdioma();
+
   }
 
-  seleccionarPuntoInteres(
-    punto: Nodo
-  ): void {
+
+
+  seleccionarPuntoInteres(punto: Nodo): void {
+
     this.destino = punto.id;
-    this.nivelVisualizado =
-      punto.nivel ?? 1;
+
+    this.nivelVisualizado = punto.nivel ?? 1;
 
     this.limpiarRuta();
+
   }
 
-  seleccionarPuntoMapa(
-    nodoId: string
-  ): void {
-    const idDestino =
-      this.modoAccesible &&
-      nodoId ===
-        'piscina-acceso-escalones-nivel-3'
-        ? 'piscina-acceso-accesible-nivel-3'
-        : nodoId;
 
-    const destino =
-      this.mapaService
-        .obtenerNodoPorId(
-          idDestino
-        );
+
+  seleccionarPuntoMapa(nodoId: string): void {
+
+    const idDestino = this.modoAccesible &&
+
+      nodoId === 'piscina-acceso-escalones-nivel-3'
+
+      ? 'piscina-acceso-accesible-nivel-3'
+
+      : nodoId;
+
+    const destino = this.mapaService.obtenerNodoPorId(idDestino);
+
+
 
     if (!destino) {
+
       return;
+
     }
+
+
 
     this.destino = destino.id;
 
-    this.nivelVisualizado =
-      destino.nivel ??
-      this.nivelVisualizado;
+    this.nivelVisualizado = destino.nivel ?? this.nivelVisualizado;
 
     this.limpiarRuta();
+
   }
 
-  mostrarNivelMapa(
-    nivel: 1 | 3
-  ): void {
-    this.nivelVisualizado =
-      nivel;
+
+
+  mostrarNivelMapa(nivel: 1 | 3): void {
+
+    this.nivelVisualizado = nivel;
+
   }
+
+
 
   alternarMenu(): void {
-    this.menuAbierto =
-      !this.menuAbierto;
+
+    this.menuAbierto = !this.menuAbierto;
+
   }
+
+
 
   cambiarSeleccionRuta(): void {
+
     this.limpiarRuta();
+
   }
 
-  iniciarSeleccionVoz(
-    campo: CampoSeleccionVoz
-  ): void {
-    if (
-      !this.reconocimientoVozDisponible
-    ) {
-      this.estadoSeleccionVoz =
-        this.traducir(
-          'reconocimientoVozNoDisponible'
-        );
 
+
+  iniciarSeleccionVoz(campo: CampoSeleccionVoz): void {
+    if (!this.reconocimientoVozDisponible) {
+      this.estadoSeleccionVoz = this.traducir(
+        'reconocimientoVozNoDisponible'
+      );
       return;
     }
 
     this.asistenteVoz.detener();
     this.comandoVozActivo = false;
+    this.campoSeleccionVozActivo = campo;
 
-    this.campoSeleccionVozActivo =
-      campo;
+    const pregunta = this.traducir(
+      campo === 'origen'
+        ? 'preguntaOrigenVoz'
+        : 'preguntaDestinoVoz'
+    );
 
-    const pregunta =
-      this.traducir(
-        campo === 'origen'
-          ? 'preguntaOrigenVoz'
-          : 'preguntaDestinoVoz'
-      );
+    this.estadoSeleccionVoz = pregunta;
 
-    this.estadoSeleccionVoz =
-      pregunta;
+    const comenzarEscucha = (): void => {
+      if (this.campoSeleccionVozActivo !== campo) {
+        return;
+      }
 
-    const comenzarEscucha =
-      (): void => {
-        if (
-          this.campoSeleccionVozActivo !==
-          campo
-        ) {
-          return;
-        }
+      this.escucharSeleccionVoz(campo);
+      this.changeDetectorRef.markForCheck();
+    };
 
-        this.escucharSeleccionVoz(
-          campo
-        );
-
-        this.changeDetectorRef
-          .markForCheck();
-      };
-
-    const preguntaReproducida =
-      this.asistenteVoz.hablar(
-        pregunta,
-        this.idiomaSeleccionado,
-        comenzarEscucha
-      );
-
-    if (!preguntaReproducida) {
+    if (!this.asistenteVoz.hablar(
+      pregunta,
+      this.idiomaSeleccionado,
+      comenzarEscucha
+    )) {
       comenzarEscucha();
     }
   }
 
   detenerSeleccionVoz(): void {
     this.asistenteVoz.detener();
-
-    this.campoSeleccionVozActivo =
-      null;
-
-    this.estadoSeleccionVoz =
-      this.traducir(
-        'comandoVozCancelado'
-      );
+    this.campoSeleccionVozActivo = null;
+    this.estadoSeleccionVoz = this.traducir(
+      'comandoVozCancelado'
+    );
   }
 
   procesarSeleccionVoz(
     campo: CampoSeleccionVoz,
     frase: string
   ): void {
-    const lugarReconocido =
-      this.buscarLugarEnFrase(
-        frase
-      );
+    const lugarReconocido = this.buscarLugarEnFrase(frase);
 
-    this.campoSeleccionVozActivo =
-      null;
+    this.campoSeleccionVozActivo = null;
 
     if (!lugarReconocido) {
-      this.estadoSeleccionVoz =
-        this.traducir(
-          'lugarVozNoReconocido'
-        );
-
+      this.estadoSeleccionVoz = this.traducir(
+        'lugarVozNoReconocido'
+      );
       return;
     }
 
-    const lugar =
-      campo === 'destino' &&
+    const lugar = campo === 'destino' &&
       this.modoAccesible &&
-      lugarReconocido.id ===
-        'piscina-acceso-escalones-nivel-3'
-        ? this.mapaService
-          .obtenerNodoPorId(
-            'piscina-acceso-accesible-nivel-3'
-          ) ??
-          lugarReconocido
-        : lugarReconocido;
+      lugarReconocido.id === 'piscina-acceso-escalones-nivel-3'
+      ? this.mapaService.obtenerNodoPorId(
+        'piscina-acceso-accesible-nivel-3'
+      ) ?? lugarReconocido
+      : lugarReconocido;
 
-    const otroId =
-      campo === 'origen'
-        ? this.destino
-        : this.origen;
+    const otroId = campo === 'origen'
+      ? this.destino
+      : this.origen;
 
-    if (
-      lugar.id === otroId
-    ) {
-      this.estadoSeleccionVoz =
-        this.traducir(
-          'origenDestinoIguales'
-        );
-
+    if (lugar.id === otroId) {
+      this.estadoSeleccionVoz = this.traducir(
+        'origenDestinoIguales'
+      );
       this.asistenteVoz.hablar(
         this.estadoSeleccionVoz,
         this.idiomaSeleccionado
       );
-
       return;
     }
 
@@ -703,22 +934,15 @@ export class HomePage implements OnDestroy {
       this.destino = lugar.id;
     }
 
-    this.nivelVisualizado =
-      lugar.nivel ??
-      this.nivelVisualizado;
-
-    this.estadoSeleccionVoz =
-      this.traducir(
-        campo === 'origen'
-          ? 'origenVozSeleccionado'
-          : 'destinoVozSeleccionado',
-        {
-          nombre:
-            this.nombreNodo(
-              lugar
-            )
-        }
-      );
+    this.nivelVisualizado = lugar.nivel ?? this.nivelVisualizado;
+    this.estadoSeleccionVoz = this.traducir(
+      campo === 'origen'
+        ? 'origenVozSeleccionado'
+        : 'destinoVozSeleccionado',
+      {
+        nombre: this.nombreNodo(lugar)
+      }
+    );
 
     this.asistenteVoz.hablar(
       this.estadoSeleccionVoz,
@@ -726,1407 +950,1923 @@ export class HomePage implements OnDestroy {
     );
   }
 
+  private escucharSeleccionVoz(
+    campo: CampoSeleccionVoz
+  ): void {
+    this.estadoSeleccionVoz = this.traducir(
+      campo === 'origen'
+        ? 'escuchandoOrigenVoz'
+        : 'escuchandoDestinoVoz'
+    );
+
+    const inicioCorrecto = this.asistenteVoz.escucharComando(
+      this.idiomaSeleccionado,
+      frase => {
+        this.procesarSeleccionVoz(campo, frase);
+        this.changeDetectorRef.markForCheck();
+      },
+      codigo => {
+        this.campoSeleccionVozActivo = null;
+        this.manejarErrorSeleccionVoz(codigo);
+        this.changeDetectorRef.markForCheck();
+      },
+      () => {
+        if (this.campoSeleccionVozActivo === campo) {
+          this.campoSeleccionVozActivo = null;
+          this.estadoSeleccionVoz = this.traducir(
+            'comandoVozSinResultado'
+          );
+        }
+        this.changeDetectorRef.markForCheck();
+      }
+    );
+
+    if (!inicioCorrecto) {
+      this.campoSeleccionVozActivo = null;
+      this.estadoSeleccionVoz = this.traducir(
+        'errorIniciarMicrofono'
+      );
+    }
+  }
+
   iniciarComandoVozRuta(): void {
-    if (
-      !this.reconocimientoVozDisponible
-    ) {
-      this.estadoComandoVoz =
-        this.traducir(
-          'reconocimientoVozNoDisponible'
-        );
+
+    if (!this.reconocimientoVozDisponible) {
+
+      this.estadoComandoVoz = this.traducir('reconocimientoVozNoDisponible');
 
       return;
+
     }
 
-    this.estadoComandoVoz =
-      this.traducir(
-        'escuchandoComandoRuta'
-      );
+
+
+    this.estadoComandoVoz = this.traducir('escuchandoComandoRuta');
 
     this.comandoVozActivo = true;
 
-    const inicioCorrecto =
-      this.asistenteVoz
-        .escucharComando(
-          this.idiomaSeleccionado,
-          frase => {
-            this.procesarComandoVozRuta(
-              frase
-            );
+    const inicioCorrecto = this.asistenteVoz.escucharComando(
 
-            this.changeDetectorRef
-              .markForCheck();
-          },
-          codigo => {
-            this.manejarErrorComandoVoz(
-              codigo
-            );
+      this.idiomaSeleccionado,
 
-            this.changeDetectorRef
-              .markForCheck();
-          },
-          () => {
-            this.comandoVozActivo =
-              false;
+      frase => {
 
-            if (
-              this.estadoComandoVoz ===
-              this.traducir(
-                'escuchandoComandoRuta'
-              )
-            ) {
-              this.estadoComandoVoz =
-                this.traducir(
-                  'comandoVozSinResultado'
-                );
-            }
+        this.procesarComandoVozRuta(frase);
 
-            this.changeDetectorRef
-              .markForCheck();
-          }
-        );
+        this.changeDetectorRef.markForCheck();
+
+      },
+
+      codigo => {
+
+        this.manejarErrorComandoVoz(codigo);
+
+        this.changeDetectorRef.markForCheck();
+
+      },
+
+      () => {
+
+        this.comandoVozActivo = false;
+
+        if (this.estadoComandoVoz === this.traducir('escuchandoComandoRuta')) {
+
+          this.estadoComandoVoz = this.traducir('comandoVozSinResultado');
+
+        }
+
+        this.changeDetectorRef.markForCheck();
+
+      }
+
+    );
+
+
 
     if (!inicioCorrecto) {
-      this.comandoVozActivo =
-        false;
 
-      this.estadoComandoVoz =
-        this.traducir(
-          'errorIniciarMicrofono'
-        );
+      this.comandoVozActivo = false;
+
+      this.estadoComandoVoz = this.traducir('errorIniciarMicrofono');
+
     }
+
   }
+
+
 
   detenerComandoVozRuta(): void {
-    this.asistenteVoz
-      .detenerReconocimiento();
 
-    this.comandoVozActivo =
-      false;
+    this.asistenteVoz.detenerReconocimiento();
 
-    this.estadoComandoVoz =
-      this.traducir(
-        'comandoVozCancelado'
-      );
+    this.comandoVozActivo = false;
+
+    this.estadoComandoVoz = this.traducir('comandoVozCancelado');
+
   }
 
-  procesarComandoVozRuta(
-    frase: string
-  ): void {
-    const seleccion =
-      this.interpretarComandoVoz(
-        frase
-      );
+
+
+  procesarComandoVozRuta(frase: string): void {
+
+    const seleccion = this.interpretarComandoVoz(frase);
+
+
 
     if (!seleccion) {
-      this.comandoVozActivo =
-        false;
 
-      this.estadoComandoVoz =
-        this.traducir(
-          'formatoComandoVoz'
-        );
+      this.comandoVozActivo = false;
+
+      this.estadoComandoVoz = this.traducir('formatoComandoVoz');
 
       return;
+
     }
 
-    const destinoId =
-      this.modoAccesible &&
-      seleccion.destino.id ===
-        'piscina-acceso-escalones-nivel-3'
-        ? 'piscina-acceso-accesible-nivel-3'
-        : seleccion.destino.id;
 
-    const destino =
-      this.mapaService
-        .obtenerNodoPorId(
-          destinoId
-        ) ??
-      seleccion.destino;
 
-    this.origen =
-      seleccion.origen.id;
+    const destinoId = this.modoAccesible &&
 
-    this.destino =
-      destino.id;
+      seleccion.destino.id === 'piscina-acceso-escalones-nivel-3'
 
-    this.nivelVisualizado =
-      destino.nivel ?? 1;
+      ? 'piscina-acceso-accesible-nivel-3'
 
-    this.comandoVozActivo =
-      false;
+      : seleccion.destino.id;
 
-    this.estadoComandoVoz =
-      this.traducir(
-        'comandoVozDetectado',
-        {
-          origen:
-            this.nombreNodo(
-              seleccion.origen
-            ),
-          destino:
-            this.nombreNodo(
-              destino
-            )
-        }
-      );
+    const destino = this.mapaService.obtenerNodoPorId(destinoId) ?? seleccion.destino;
+
+    this.origen = seleccion.origen.id;
+
+    this.destino = destino.id;
+
+    this.nivelVisualizado = destino.nivel ?? 1;
+
+    this.comandoVozActivo = false;
+
+    this.estadoComandoVoz = this.traducir('comandoVozDetectado', {
+
+      origen: this.nombreNodo(seleccion.origen),
+
+      destino: this.nombreNodo(destino)
+
+    });
 
     this.calcularRuta();
+
   }
 
-  async leerQrReal():
-    Promise<void> {
+
+
+  async leerQrReal(): Promise<void> {
+
     this.mensajeUbicacion = '';
 
+
+
     try {
+
       const lectura =
-        await CapacitorBarcodeScanner
-          .scanBarcode({
-            hint:
-              CapacitorBarcodeScannerTypeHint
-                .QR_CODE,
-            cameraDirection:
-              CapacitorBarcodeScannerCameraDirection
-                .BACK,
-            scanInstructions:
-              this.traducir(
-                'apuntarCamara'
-              ),
-            scanButton: true,
-            scanText:
-              this.traducir(
-                'escanear'
-              )
-          });
+
+        await CapacitorBarcodeScanner.scanBarcode({
+
+          hint:
+
+            CapacitorBarcodeScannerTypeHint.QR_CODE,
+
+          cameraDirection:
+
+            CapacitorBarcodeScannerCameraDirection.BACK,
+
+          scanInstructions:
+
+            this.traducir('apuntarCamara'),
+
+          scanButton: true,
+
+          scanText:
+
+            this.traducir('escanear')
+
+        });
+
+
 
       if (!lectura.ScanResult) {
+
         this.mensajeUbicacion =
+
           this.traducir(
+
             'lecturaCancelada'
+
           );
 
         return;
+
       }
 
+
+
       this.procesarLecturaQr(
+
         lectura.ScanResult
+
       );
+
     } catch (error) {
+
       console.error(
+
         'Error al leer el código QR:',
+
         error
+
       );
+
+
 
       this.mensajeUbicacion =
-        this.traducir(
-          'errorCamara'
-        );
+
+        this.traducir('errorCamara');
+
     }
+
   }
+
+
 
   simularLecturaQr(): void {
+
     this.mensajeUbicacion = '';
 
-    const contenidoQr =
-      JSON.stringify({
-        sistema: 'navinside',
-        version: 1,
-        nodoId:
-          'entrada-nivel-4'
-      });
+
+
+    const contenidoQr = JSON.stringify({
+
+      sistema: 'navinside',
+
+      version: 1,
+
+      nodoId: 'entrada-nivel-4'
+
+    });
+
+
 
     this.procesarLecturaQr(
+
       contenidoQr
+
     );
+
   }
 
+
+
   calcularRuta(): void {
+
     this.limpiarRuta();
 
+
+
     if (!this.mapaEsValido) {
+
       this.resultado =
+
         this.obtenerMensajeMapaInvalido();
 
       return;
+
     }
 
-    if (
-      !this.origen ||
-      !this.destino
-    ) {
+
+
+    if (!this.origen || !this.destino) {
+
       this.resultado =
+
         this.traducir(
+
           'seleccionarOrigenDestino'
+
         );
 
       return;
+
     }
 
-    if (
-      this.origen ===
-      this.destino
-    ) {
+
+
+    if (this.origen === this.destino) {
+
       this.resultado =
+
         this.traducir(
+
           'origenDestinoIguales'
+
         );
 
       return;
+
     }
+
+
 
     const nodoOrigen =
-      this.mapaService
-        .obtenerNodoPorId(
-          this.origen
-        );
+
+      this.mapaService.obtenerNodoPorId(
+
+        this.origen
+
+      );
+
+
 
     const nodoDestino =
-      this.mapaService
-        .obtenerNodoPorId(
-          this.destino
-        );
 
-    if (
-      !nodoOrigen ||
-      !nodoDestino
-    ) {
+      this.mapaService.obtenerNodoPorId(
+
+        this.destino
+
+      );
+
+
+
+    if (!nodoOrigen || !nodoDestino) {
+
       this.resultado =
+
         this.traducir(
+
           'lugaresNoEncontrados'
+
         );
 
       return;
+
     }
 
-    const ruta =
-      this.rutaService
-        .calcularRuta(
-          nodoOrigen.id,
-          nodoDestino.id,
-          this.modoAccesible
-        );
 
-    if (
-      ruta.length === 0
-    ) {
-      this.resultado =
+
+    const ruta =
+
+      this.rutaService.calcularRuta(
+
+        nodoOrigen.id,
+
+        nodoDestino.id,
+
         this.modoAccesible
+
+      );
+
+
+
+    if (ruta.length === 0) {
+
+      this.resultado =
+
+        this.modoAccesible
+
           ? this.traducir(
+
             'rutaAccesibleNoDisponible'
+
           )
+
           : this.traducir(
+
             'rutaNoDisponible'
+
           );
 
       return;
+
     }
 
-    this.establecerRutaCalculada(
-      ruta
-    );
+
+
+    this.establecerRutaCalculada(ruta);
+
   }
+
+
 
   alternarAsistenteVoz(): void {
+
     if (!this.vozDisponible) {
+
       return;
+
     }
+
+
 
     if (this.asistenteVozActivo) {
-      this.asistenteVozActivo =
-        false;
+
+      this.asistenteVozActivo = false;
 
       this.asistenteVoz.detener();
 
-      if (
-        this.recorridoAutomaticoActivo
-      ) {
-        this.programarAvanceAutomatico(
-          2800
-        );
+
+
+      if (this.recorridoAutomaticoActivo) {
+
+        this.programarAvanceAutomatico(2800);
+
       }
 
+
+
       return;
+
     }
 
-    this.asistenteVozActivo =
-      true;
+
+
+    this.asistenteVozActivo = true;
 
     this.limpiarTemporizadorRecorrido();
+
     this.anunciarInstruccionSiActiva();
+
   }
+
+
 
   repetirIndicacionVoz(): void {
-    if (
-      !this.pasoActual ||
-      !this.vozDisponible
-    ) {
+
+    if (!this.pasoActual || !this.vozDisponible) {
+
       return;
+
     }
 
-    this.anunciarInstruccionSiActiva(
-      true
-    );
+
+
+    this.anunciarInstruccionSiActiva(true);
+
   }
+
+
 
   iniciarRecorridoAutomatico(): void {
+
     if (
+
       this.pasosRuta.length === 0 ||
+
       this.esUltimoPaso ||
+
       this.recorridoAutomaticoActivo
-    ) {
-      return;
-    }
 
-    this.recorridoAutomaticoActivo =
-      true;
-
-    if (
-      this.asistenteVozActivo
     ) {
-      this.anunciarInstruccionSiActiva(
-        true
-      );
 
       return;
+
     }
 
-    this.programarAvanceAutomatico(
-      3200
-    );
+
+
+    this.recorridoAutomaticoActivo = true;
+
+
+
+    if (this.asistenteVozActivo) {
+
+      this.anunciarInstruccionSiActiva(true);
+
+      return;
+
+    }
+
+
+
+    this.programarAvanceAutomatico(3200);
+
   }
 
+
+
   detenerRecorridoAutomatico(): void {
-    const estabaActivo =
-      this.recorridoAutomaticoActivo;
+
+    const estabaActivo = this.recorridoAutomaticoActivo;
 
     this.limpiarTemporizadorRecorrido();
 
-    this.recorridoAutomaticoActivo =
-      false;
+    this.recorridoAutomaticoActivo = false;
 
-    if (
-      estabaActivo &&
-      this.asistenteVozActivo
-    ) {
+
+
+    if (estabaActivo && this.asistenteVozActivo) {
+
       this.asistenteVoz.detener();
+
     }
+
   }
 
+
+
   avanzarPaso(): void {
+
     if (
+
       this.pasosRuta.length === 0 ||
+
       this.esUltimoPaso
+
     ) {
+
       return;
+
     }
+
+
 
     this.limpiarTemporizadorRecorrido();
 
     this.pasoActualIndice++;
 
     this.sincronizarPasoActual();
+
   }
 
+
+
   retrocederPaso(): void {
+
     if (
+
       this.pasosRuta.length === 0 ||
+
       this.esPrimerPaso
+
     ) {
+
       return;
+
     }
+
+
 
     this.limpiarTemporizadorRecorrido();
 
     this.pasoActualIndice--;
 
     this.sincronizarPasoActual();
+
   }
 
+
+
   reiniciarRecorrido(): void {
-    if (
-      this.pasosRuta.length === 0
-    ) {
+
+    if (this.pasosRuta.length === 0) {
+
       return;
+
     }
+
+
 
     this.limpiarTemporizadorRecorrido();
 
     this.pasoActualIndice = 0;
 
     this.sincronizarPasoActual();
+
   }
+
+
 
   cambiarModoAccesible(): void {
+
     this.limpiarRuta();
+
   }
 
-  private escucharSeleccionVoz(
-    campo: CampoSeleccionVoz
-  ): void {
-    this.estadoSeleccionVoz =
-      this.traducir(
-        campo === 'origen'
-          ? 'escuchandoOrigenVoz'
-          : 'escuchandoDestinoVoz'
-      );
 
-    const inicioCorrecto =
-      this.asistenteVoz
-        .escucharComando(
-          this.idiomaSeleccionado,
-          frase => {
-            this.procesarSeleccionVoz(
-              campo,
-              frase
-            );
-
-            this.changeDetectorRef
-              .markForCheck();
-          },
-          codigo => {
-            this.campoSeleccionVozActivo =
-              null;
-
-            this.manejarErrorSeleccionVoz(
-              codigo
-            );
-
-            this.changeDetectorRef
-              .markForCheck();
-          },
-          () => {
-            if (
-              this.campoSeleccionVozActivo ===
-              campo
-            ) {
-              this.campoSeleccionVozActivo =
-                null;
-
-              this.estadoSeleccionVoz =
-                this.traducir(
-                  'comandoVozSinResultado'
-                );
-            }
-
-            this.changeDetectorRef
-              .markForCheck();
-          }
-        );
-
-    if (!inicioCorrecto) {
-      this.campoSeleccionVozActivo =
-        null;
-
-      this.estadoSeleccionVoz =
-        this.traducir(
-          'errorIniciarMicrofono'
-        );
-    }
-  }
 
   private sincronizarPasoActual(): void {
-    const paso =
-      this.pasoActual;
+
+    const paso = this.pasoActual;
+
+
 
     if (!paso) {
+
       return;
+
     }
+
+
 
     this.nivelVisualizado =
+
       paso.nodo.nivel ?? 1;
 
+
+
     this.anunciarInstruccionSiActiva();
+
   }
+
+
 
   private anunciarInstruccionSiActiva(
+
     forzar = false
+
   ): void {
+
     if (
-      (
-        !this.asistenteVozActivo &&
-        !forzar
-      ) ||
+
+      (!this.asistenteVozActivo && !forzar) ||
+
       !this.pasoActual
+
     ) {
+
       return;
+
     }
+
+
 
     const inicioLectura =
+
       this.asistenteVoz.hablar(
+
         this.instruccionVozActual,
+
         this.idiomaSeleccionado,
+
         () => {
-          if (
-            this.recorridoAutomaticoActivo
-          ) {
-            this.programarAvanceAutomatico(
-              850
-            );
+
+          if (this.recorridoAutomaticoActivo) {
+
+            this.programarAvanceAutomatico(850);
+
           }
+
         }
+
       );
+
+
 
     if (!inicioLectura) {
-      this.asistenteVozActivo =
-        false;
 
-      if (
-        this.recorridoAutomaticoActivo
-      ) {
-        this.programarAvanceAutomatico(
-          3200
-        );
+      this.asistenteVozActivo = false;
+
+
+
+      if (this.recorridoAutomaticoActivo) {
+
+        this.programarAvanceAutomatico(3200);
+
       }
+
     }
+
   }
+
+
 
   private programarAvanceAutomatico(
+
     esperaMs: number
+
   ): void {
+
     this.limpiarTemporizadorRecorrido();
 
-    this.temporizadorRecorrido =
-      setTimeout(
-        () => {
-          this.temporizadorRecorrido =
-            null;
 
-          if (
-            !this.recorridoAutomaticoActivo
-          ) {
-            return;
-          }
 
-          if (this.esUltimoPaso) {
-            this.detenerRecorridoAutomatico();
+    this.temporizadorRecorrido = setTimeout(
 
-            this.changeDetectorRef
-              .markForCheck();
+      () => {
 
-            return;
-          }
+        this.temporizadorRecorrido = null;
 
-          this.avanzarPaso();
 
-          this.changeDetectorRef
-            .markForCheck();
 
-          if (
-            !this.asistenteVozActivo
-          ) {
-            this.programarAvanceAutomatico(
-              3200
-            );
-          }
-        },
-        esperaMs
-      );
+        if (!this.recorridoAutomaticoActivo) {
+
+          return;
+
+        }
+
+
+
+        if (this.esUltimoPaso) {
+
+          this.detenerRecorridoAutomatico();
+
+          this.changeDetectorRef.markForCheck();
+
+          return;
+
+        }
+
+
+
+        this.avanzarPaso();
+
+        this.changeDetectorRef.markForCheck();
+
+
+
+        if (!this.asistenteVozActivo) {
+
+          this.programarAvanceAutomatico(3200);
+
+        }
+
+      },
+
+      esperaMs
+
+    );
+
   }
+
+
 
   private limpiarTemporizadorRecorrido(): void {
-    if (
-      this.temporizadorRecorrido
-    ) {
-      clearTimeout(
-        this.temporizadorRecorrido
-      );
+
+    if (this.temporizadorRecorrido) {
+
+      clearTimeout(this.temporizadorRecorrido);
+
     }
 
-    this.temporizadorRecorrido =
-      null;
+
+
+    this.temporizadorRecorrido = null;
+
   }
 
+
+
   private procesarLecturaQr(
+
     contenidoQr: string
+
   ): void {
+
     if (!this.mapaEsValido) {
+
       this.mensajeUbicacion =
+
         this.obtenerMensajeMapaInvalido();
 
       return;
+
     }
+
+
 
     const nodoDetectado =
-      this.qrService
-        .procesarCodigo(
-          contenidoQr
-        );
+
+      this.qrService.procesarCodigo(
+
+        contenidoQr
+
+      );
+
+
 
     if (!nodoDetectado) {
+
       this.mensajeUbicacion =
-        this.traducir(
-          'qrInvalido'
-        );
+
+        this.traducir('qrInvalido');
 
       return;
+
     }
+
+
 
     const debeRecalcular =
-      this.rutaCalculada.length >
-        0 &&
+
+      this.rutaCalculada.length > 0 &&
+
       this.destino !== '';
 
-    this.origen =
-      nodoDetectado.id;
+
+
+    this.origen = nodoDetectado.id;
+
+
 
     this.nivelVisualizado =
+
       nodoDetectado.nivel ?? 1;
 
+
+
     if (debeRecalcular) {
+
       this.recalcularRutaDesdeQr(
+
         nodoDetectado
+
       );
 
       return;
+
     }
 
+
+
     this.mensajeUbicacion =
+
       this.traducir(
+
         'ubicacionDetectada',
+
         {
+
           nombre:
+
             this.nombreNodo(
+
               nodoDetectado
+
             )
+
         }
+
       );
+
   }
+
+
 
   private recalcularRutaDesdeQr(
+
     nodoDetectado: Nodo
+
   ): void {
+
     const nodoDestino =
-      this.mapaService
-        .obtenerNodoPorId(
-          this.destino
-        );
+
+      this.mapaService.obtenerNodoPorId(
+
+        this.destino
+
+      );
+
+
 
     if (!nodoDestino) {
+
       this.limpiarRuta();
 
+
+
       this.mensajeUbicacion =
+
         this.traducir(
+
           'lugaresNoEncontrados'
+
         );
 
       return;
+
     }
 
+
+
     if (
+
       nodoDetectado.id ===
+
       nodoDestino.id
+
     ) {
+
       this.rutaCalculada = [
+
         nodoDetectado
+
       ];
+
+
 
       this.pasosRuta = [
+
         {
+
           orden: 1,
+
           tipo: 'llegada',
+
           nodo: nodoDetectado
+
         }
+
       ];
 
+
+
       this.pasoActualIndice = 0;
+
       this.distanciaTotal = 0;
 
+
+
       this.actualizarResultadoRuta();
+
       this.sincronizarPasoActual();
 
+
+
       this.mensajeUbicacion =
+
         this.traducir(
+
           'destinoAlcanzadoQr',
+
           {
+
             nombre:
+
               this.nombreNodo(
+
                 nodoDetectado
+
               )
+
           }
+
         );
 
+
+
       return;
+
     }
+
+
 
     const nuevaRuta =
-      this.rutaService
-        .calcularRuta(
-          nodoDetectado.id,
-          nodoDestino.id,
-          this.modoAccesible
-        );
 
-    if (
-      nuevaRuta.length === 0
-    ) {
+      this.rutaService.calcularRuta(
+
+        nodoDetectado.id,
+
+        nodoDestino.id,
+
+        this.modoAccesible
+
+      );
+
+
+
+    if (nuevaRuta.length === 0) {
+
       this.limpiarRuta();
 
+
+
       this.nivelVisualizado =
+
         nodoDetectado.nivel ?? 1;
 
+
+
       this.mensajeUbicacion =
+
         this.modoAccesible
+
           ? this.traducir(
+
             'rutaAccesibleNoDisponible'
+
           )
+
           : this.traducir(
+
             'rutaNoDisponible'
+
           );
 
+
+
       return;
+
     }
 
-    this.establecerRutaCalculada(
-      nuevaRuta
-    );
+
+
+    this.establecerRutaCalculada(nuevaRuta);
+
+
 
     this.mensajeUbicacion =
+
       this.traducir(
+
         'rutaRecalculada',
+
         {
+
           nombre:
+
             this.nombreNodo(
+
               nodoDetectado
+
             )
+
         }
+
       );
+
   }
+
+
 
   private establecerRutaCalculada(
+
     ruta: Nodo[]
+
   ): void {
-    this.rutaCalculada =
-      ruta;
+
+    this.rutaCalculada = ruta;
+
+
 
     this.pasosRuta =
-      this.rutaService
-        .generarPasos(ruta);
+
+      this.rutaService.generarPasos(ruta);
+
+
 
     this.pasoActualIndice = 0;
+
+
 
     this.distanciaTotal =
+
       this.rutaService
-        .calcularDistanciaTotal(
-          ruta
-        );
+
+        .calcularDistanciaTotal(ruta);
+
+
 
     this.sincronizarPasoActual();
+
     this.actualizarResultadoRuta();
+
   }
 
-  private async cargarMapaInicial():
-    Promise<void> {
+
+
+  private async cargarMapaInicial(): Promise<void> {
+
     const mapaCargado =
-      await this.mapaService
-        .cargarMapaDesdeSupabase();
+
+      await this.mapaService.cargarMapaDesdeSupabase();
+
+
 
     if (mapaCargado) {
+
       this.actualizarDatosMapa();
+
     }
+
   }
+
+
 
   private actualizarDatosMapa(): void {
+
     const mapaActivo =
-      this.mapaService
-        .obtenerMapaActivo();
+
+      this.mapaService.obtenerMapaActivo();
+
+
 
     const conexionesNavegables =
+
       this.mapaService
+
         .obtenerConexionesNavegables();
 
+
+
     const validacion:
+
       ResultadoValidacionMapa =
-      this.mapaValidadorService
-        .validarMapa(
-          mapaActivo.nodos,
-          conexionesNavegables
-        );
+
+      this.mapaValidadorService.validarMapa(
+
+        mapaActivo.nodos,
+
+        conexionesNavegables
+
+      );
+
+
 
     this.mapaEsValido =
+
       validacion.valido;
 
+
+
     this.erroresMapa =
+
       validacion.errores;
 
+
+
     this.advertenciasMapa =
+
       validacion.advertencias;
 
+
+
     this.lugares =
+
       mapaActivo.nodos
+
         .filter(
+
           nodo =>
-            nodo.restringido !==
-            true
+
+            nodo.restringido !== true
+
         );
+
+
 
     this.conexionesMapa =
+
       conexionesNavegables;
 
+
+
     this.nodosMapa =
+
       this.lugares.map(
+
         nodo => ({
+
           ...nodo,
+
           nombre:
-            this.nombreNodo(
-              nodo
-            )
+
+            this.nombreNodo(nodo)
+
         })
+
       );
+
+
 
     this.lugaresReferencia =
+
       this.mapaService
+
         .obtenerLugaresPreliminares();
+
   }
 
-  private obtenerMensajeMapaInvalido():
-    string {
+
+
+  private obtenerMensajeMapaInvalido(): string {
+
     const cantidadErrores =
+
       this.erroresMapa.length;
 
+
+
     return this.texto(
+
       `No se pueden calcular rutas: el mapa tiene ${cantidadErrores} error(es) de configuración.`,
+
       `Routes cannot be calculated: the map has ${cantidadErrores} configuration error(s).`,
+
       `Não é possível calcular rotas: o mapa possui ${cantidadErrores} erro(s) de configuração.`
+
     );
+
   }
+
+
 
   private actualizarResultadoRuta(): void {
+
     this.resultado =
+
       this.rutaCalculada
+
         .map(
+
           nodo =>
-            this.nombreNodo(
-              nodo
-            )
+
+            this.nombreNodo(nodo)
+
         )
+
         .join(' → ');
+
   }
+
+
 
   private obtenerInstruccionVisual(
-    paso: PasoRuta
-  ): string {
-    const textoBase =
-      this.traducirPaso(paso);
 
-    if (
-      paso.tipo !== 'avance'
-    ) {
+    paso: PasoRuta
+
+  ): string {
+
+    const textoBase = this.traducirPaso(paso);
+
+
+
+    if (paso.tipo !== 'avance') {
+
       return textoBase;
+
     }
 
-    const direccion =
-      this.obtenerDireccionFisica(
-        paso
-      );
+
+
+    const direccion = this.obtenerDireccionFisica(paso);
 
     const accesoEspecial =
-      this.obtenerInstruccionAccesoEspecial(
-        paso.nodo.id
-      );
+
+      this.obtenerInstruccionAccesoEspecial(paso.nodo.id);
+
+
 
     return [
+
       direccion
-        ? this.traducir(
-          direccion,
-          {
-            nombre:
-              this.nombreNodo(
-                paso.nodo
-              )
-          }
-        )
+
+        ? this.traducir(direccion, {
+
+          nombre: this.nombreNodo(paso.nodo)
+
+        })
+
         : textoBase,
+
       accesoEspecial
+
     ]
+
       .filter(Boolean)
+
       .join(' ');
+
   }
+
+
 
   private obtenerDireccionFisica(
+
     paso: PasoRuta
+
   ): string | null {
-    const origenId =
-      paso.desde?.id;
 
-    const destinoId =
-      paso.nodo.id;
+    const origenId = paso.desde?.id;
 
-    if (
-      origenId ===
-      'ascensor-central-nivel-1'
-    ) {
-      if (
-        destinoId ===
-        'zona-juego-adulto-nivel-1'
-      ) {
+    const destinoId = paso.nodo.id;
+
+
+
+    if (origenId === 'ascensor-central-nivel-1') {
+
+      if (destinoId === 'zona-juego-adulto-nivel-1') {
+
         return 'giraDerechaHacia';
+
       }
+
+
 
       if (
+
         [
+
           'zona-kid-nivel-1',
+
           'zona-play-nivel-1',
+
           'mini-market-proa-nivel-1',
+
           'hall-nivel-1'
+
         ].includes(destinoId)
+
       ) {
+
         return 'giraIzquierdaHacia';
+
       }
+
     }
 
+
+
     if (
-      origenId ===
-        'hall-nivel-1' &&
+
+      origenId === 'hall-nivel-1' &&
+
       [
+
         'salon-eventos-terramar-nivel-1',
+
         'gimnasio-nivel-1',
+
         'alma-spa-nivel-1',
+
         'salon-eventos-montemar-nivel-1',
+
         'ascensor-habitaciones-nivel-1'
+
       ].includes(destinoId)
+
     ) {
+
       return 'desdeHallDerechaHacia';
+
     }
 
+
+
     if (
-      (
-        origenId ===
-          'zona-kid-nivel-1' &&
-        destinoId ===
-          'zona-play-nivel-1'
-      ) ||
-      (
-        origenId ===
-          'zona-play-nivel-1' &&
-        destinoId ===
-          'mini-market-proa-nivel-1'
-      )
+
+      (origenId === 'zona-kid-nivel-1' &&
+
+        destinoId === 'zona-play-nivel-1') ||
+
+      (origenId === 'zona-play-nivel-1' &&
+
+        destinoId === 'mini-market-proa-nivel-1')
+
     ) {
+
       return 'continuaRectoHacia';
+
     }
+
+
 
     return null;
+
   }
+
+
 
   private obtenerInstruccionAccesoEspecial(
+
     destinoId: string
+
   ): string {
-    if (
-      destinoId ===
-      'gimnasio-nivel-1'
-    ) {
-      return this.traducir(
-        'accesoGimnasioEscaleras'
-      );
+
+    if (destinoId === 'gimnasio-nivel-1') {
+
+      return this.traducir('accesoGimnasioEscaleras');
+
     }
 
-    if (
-      destinoId ===
-      'zona-juego-adulto-nivel-1'
-    ) {
-      return this.traducir(
-        'accesoJuegosAdultosEscaleras'
-      );
+
+
+    if (destinoId === 'zona-juego-adulto-nivel-1') {
+
+      return this.traducir('accesoJuegosAdultosEscaleras');
+
     }
+
+
 
     return '';
+
   }
+
+
 
   private traducirPaso(
+
     paso: PasoRuta
+
   ): string {
+
     const nombre =
-      this.nombreNodo(
-        paso.nodo
-      );
 
-    if (
-      paso.tipo === 'inicio'
-    ) {
+      this.nombreNodo(paso.nodo);
+
+
+
+    if (paso.tipo === 'inicio') {
+
       return this.traducir(
+
         'inicioRuta',
+
         { nombre }
+
       );
+
     }
 
-    if (
-      paso.tipo === 'llegada'
-    ) {
+
+
+    if (paso.tipo === 'llegada') {
+
       return this.traducir(
+
         'llegadaRuta',
+
         { nombre }
+
       );
+
     }
 
-    if (
-      paso.tipo === 'avance'
-    ) {
+
+
+    if (paso.tipo === 'avance') {
+
       return this.traducir(
+
         'continuarHacia',
+
         { nombre }
+
       );
+
     }
+
+
 
     const nivel =
+
       paso.nodo.nivel ?? '';
 
-    if (
-      paso.medio === 'ascensor'
-    ) {
+
+
+    if (paso.medio === 'ascensor') {
+
       return this.traducir(
-        paso.direccionNivel ===
-          'subir'
+
+        paso.direccionNivel === 'subir'
+
           ? 'subirAscensor'
+
           : 'bajarAscensor',
+
         { nivel }
+
       );
+
     }
 
-    if (
-      paso.medio === 'escalera'
-    ) {
+
+
+    if (paso.medio === 'escalera') {
+
       return this.traducir(
-        paso.direccionNivel ===
-          'subir'
+
+        paso.direccionNivel === 'subir'
+
           ? 'subirEscalera'
+
           : 'bajarEscalera',
+
         { nivel }
+
       );
+
     }
 
-    if (
-      paso.medio === 'rampa'
-    ) {
+
+
+    if (paso.medio === 'rampa') {
+
       return this.traducir(
-        paso.direccionNivel ===
-          'subir'
+
+        paso.direccionNivel === 'subir'
+
           ? 'subirRampa'
+
           : 'bajarRampa',
+
         { nivel }
+
       );
+
     }
+
+
 
     return this.traducir(
-      paso.direccionNivel ===
-        'subir'
+
+      paso.direccionNivel === 'subir'
+
         ? 'cambiarNivelSubir'
+
         : 'cambiarNivelBajar',
+
       {
+
         nivel,
+
         nombre
+
       }
+
     );
+
   }
+
+
 
   private texto(
+
     espanol: string,
+
     ingles: string,
+
     portugues: string
+
   ): string {
-    if (
-      this.idiomaSeleccionado ===
-      'en'
-    ) {
+
+    if (this.idiomaSeleccionado === 'en') {
+
       return ingles;
+
     }
 
-    if (
-      this.idiomaSeleccionado ===
-      'pt'
-    ) {
+
+
+    if (this.idiomaSeleccionado === 'pt') {
+
       return portugues;
+
     }
+
+
 
     return espanol;
+
   }
+
+
 
   private limpiarRuta(): void {
+
     this.detenerRecorridoAutomatico();
+
     this.asistenteVoz.detener();
 
-    this.comandoVozActivo =
-      false;
+    this.comandoVozActivo = false;
 
     this.resultado = '';
+
     this.distanciaTotal = null;
+
     this.rutaCalculada = [];
+
     this.pasosRuta = [];
+
     this.pasoActualIndice = 0;
+
   }
+
+
 
   private interpretarComandoVoz(
+
     frase: string
-  ): {
-    origen: Nodo;
-    destino: Nodo;
-  } | null {
-    const texto =
-      this.normalizarTexto(
-        frase
-      );
 
-    const patrones: RegExp[] =
-      this.idiomaSeleccionado ===
-        'en'
-        ? [
-          /\bfrom\s+(.+?)\s+to\s+(.+)$/
-        ]
-        : this.idiomaSeleccionado ===
-            'pt'
-          ? [
-            /\b(?:de|do|da)\s+(.+?)\s+(?:ate|para)\s+(.+)$/
-          ]
-          : [
-            /\bdesde\s+(.+?)\s+hasta\s+(.+)$/,
-            /\bde\s+(.+?)\s+a\s+(.+)$/
-          ];
+  ): { origen: Nodo; destino: Nodo } | null {
 
-    let partes:
-      RegExpMatchArray | null =
-      null;
+    const texto = this.normalizarTexto(frase);
 
-    for (
-      const patron of patrones
-    ) {
-      partes =
-        texto.match(patron);
+    const patrones: RegExp[] = this.idiomaSeleccionado === 'en'
 
-      if (partes) {
-        break;
-      }
+      ? [/\bfrom\s+(.+?)\s+to\s+(.+)$/]
+
+      : this.idiomaSeleccionado === 'pt'
+
+        ? [/\b(?:de|do|da)\s+(.+?)\s+(?:ate|para)\s+(.+)$/]
+
+        : [/\bdesde\s+(.+?)\s+hasta\s+(.+)$/, /\bde\s+(.+?)\s+a\s+(.+)$/];
+
+    let partes: RegExpMatchArray | null = null;
+
+
+
+    for (const patron of patrones) {
+
+      partes = texto.match(patron);
+
+      if (partes) break;
+
     }
 
-    if (!partes) {
-      partes =
-        texto.match(
-          /\borigen\s+(.+?)\s+destino\s+(.+)$/
-        );
-    }
+
 
     if (!partes) {
+
+      partes = texto.match(/\borigen\s+(.+?)\s+destino\s+(.+)$/);
+
+    }
+
+
+
+    if (!partes) {
+
       return null;
+
     }
 
-    const origen =
-      this.buscarLugarEnFrase(
-        partes[1]
-      );
 
-    const destino =
-      this.buscarLugarEnFrase(
-        partes[2]
-      );
 
-    return (
-      origen &&
-      destino &&
-      origen.id !== destino.id
-    )
-      ? {
-        origen,
-        destino
-      }
+    const origen = this.buscarLugarEnFrase(partes[1]);
+
+    const destino = this.buscarLugarEnFrase(partes[2]);
+
+
+
+    return origen && destino && origen.id !== destino.id
+
+      ? { origen, destino }
+
       : null;
+
   }
 
-  private buscarLugarEnFrase(
-    fragmento: string
-  ): Nodo | null {
-    const texto =
-      this.normalizarTexto(
-        fragmento
-      ).replace(
-        /^(?:el|la|los|las|al|a|o|os|as)\s+/,
-        ''
-      );
 
-    const coincidencias =
-      this.lugares
-        .filter(
-          lugar =>
-            lugar.restringido !==
-            true
-        )
-        .map(
-          lugar => ({
-            lugar,
-            nombres: [
-              this.nombreNodo(
-                lugar
-              ),
-              lugar.nombre,
-              ...this.aliasVozNodo(
-                lugar.id
-              )
-            ].map(
-              nombre =>
-                this.normalizarTexto(
-                  nombre
-                )
-            )
-          })
-        )
-        .flatMap(
-          item =>
-            item.nombres
-              .filter(
-                nombre =>
-                  nombre.length >
-                    2 &&
-                  texto.includes(
-                    nombre
-                  )
-              )
-              .map(
-                nombre => ({
-                  ...item,
-                  nombre
-                })
-              )
-        )
-        .sort(
-          (
-            primera,
-            segunda
-          ) =>
-            segunda.nombre.length -
-            primera.nombre.length
-        );
 
-    return (
-      coincidencias[0]
-        ?.lugar ??
-      null
-    );
+  private buscarLugarEnFrase(fragmento: string): Nodo | null {
+
+    const textoNormalizado = this.normalizarTexto(fragmento);
+
+    if (['al', 'all', 'jal'].includes(textoNormalizado)) {
+      return this.lugares.find(
+        lugar => lugar.id === 'hall-nivel-1'
+      ) ?? null;
+    }
+
+    const texto = textoNormalizado
+
+      .replace(/^(?:el|la|los|las|al|a|o|os|as)\s+/, '');
+
+    const coincidencias = this.lugares
+
+      .filter(lugar => lugar.restringido !== true)
+
+      .map(lugar => ({
+
+        lugar,
+
+        nombres: [
+
+          this.nombreNodo(lugar),
+
+          lugar.nombre,
+
+          ...this.aliasVozNodo(lugar.id)
+
+        ].map(nombre => this.normalizarTexto(nombre))
+
+      }))
+
+      .flatMap(item => item.nombres
+
+        .filter(nombre => nombre.length > 2 && texto.includes(nombre))
+
+        .map(nombre => ({ ...item, nombre }))
+
+      )
+
+      .sort((a, b) => b.nombre.length - a.nombre.length);
+
+
+
+    return coincidencias[0]?.lugar ?? null;
+
   }
 
-  private aliasVozNodo(
-    nodoId: string
-  ): string[] {
-    const alias: Record<
-      string,
-      string[]
-    > = {
-      'ascensor-central-nivel-1': [
-        'ascensor principal',
-        'ascensores principales',
-        'ascensor central'
+
+
+  private aliasVozNodo(nodoId: string): string[] {
+
+    const alias: Record<string, string[]> = {
+
+      'entrada-nivel-4': [
+        'entrada',
+        'entrada principal',
+        'acceso principal'
       ],
-      'ascensor-central-nivel-3': [
-        'ascensor principal nivel 3',
-        'ascensor nivel 3',
-        'salida del ascensor'
+
+      'recepcion-turismo-vina-nivel-4': [
+        'recepcion turismo',
+        'recepcion de turismo',
+        'recepcion turismo vina',
+        'turismo vina',
+        'oficina de turismo',
+        'recepcion vina'
       ],
-      'ascensor-habitaciones-nivel-1': [
-        'ascensor de habitaciones',
-        'ascensores habitaciones',
-        'elevadores de habitaciones'
+
+      'recepcion-resort-nivel-4': [
+        'recepcion resort',
+        'recepcion del resort',
+        'recepcion principal'
       ],
-      'mini-market-proa-nivel-1': [
-        'minimarket',
-        'mini market',
-        'proa'
+
+      'ascensor-central-nivel-4': [
+        'ascensor central nivel 4',
+        'ascensor nivel 4',
+        'ascensor principal nivel 4'
       ],
-      'zona-kid-nivel-1': [
-        'mini club',
-        'miniclub',
-        'kids'
+
+      'puerta-exterior-derecha-nivel-4': [
+        'puerta derecha',
+        'puerta exterior derecha',
+        'salida derecha'
       ],
-      'zona-juego-adulto-nivel-1': [
-        'juegos adultos',
-        'sala de juegos adultos'
+
+      'puerta-exterior-izquierda-nivel-4': [
+        'puerta izquierda',
+        'puerta exterior izquierda',
+        'salida izquierda'
       ],
-      'salon-eventos-montemar-nivel-1': [
-        'montemar',
-        'salon montemar'
+
+      'acceso-escalera-derecha-nivel-3': [
+        'escalera derecha',
+        'acceso escalera derecha',
+        'acceso nivel 3 derecha'
       ],
-      'salon-eventos-terramar-nivel-1': [
-        'terramar',
-        'salon terramar'
+
+      'acceso-escalera-izquierda-nivel-3': [
+        'escalera izquierda',
+        'acceso escalera izquierda',
+        'acceso nivel 3 izquierda'
       ],
+
+      'ascensor-central-nivel-1': ['ascensor principal', 'ascensores principales', 'ascensor central'],
+
+      'ascensor-central-nivel-3': ['ascensor principal nivel 3', 'ascensor nivel 3', 'salida del ascensor'],
+
+      'piscina-temperada-nivel-3': [
+        'piscina temperada',
+        'piscina climatizada',
+        'piscina interior',
+        'piscina caliente'
+      ],
+
+      'ascensor-habitaciones-nivel-1': ['ascensor de habitaciones', 'ascensores habitaciones', 'elevadores de habitaciones'],
+
+      'mini-market-proa-nivel-1': ['minimarket', 'mini market', 'proa'],
+
+      'zona-kid-nivel-1': ['mini club', 'miniclub', 'kids'],
+
+      'zona-juego-adulto-nivel-1': ['juegos adultos', 'sala de juegos adultos'],
+
+      'zona-play-nivel-1': [
+        'zona play',
+        'area play',
+        'zona de juegos'
+      ],
+
+      'hall-nivel-1': [
+        'hall',
+        'all',
+        'jal',
+        'lobby',
+        'vestibulo',
+        'hall principal'
+      ],
+
+      'gimnasio-nivel-1': [
+        'gimnasio',
+        'gym',
+        'sala de gimnasio'
+      ],
+
+      'salon-eventos-montemar-nivel-1': ['montemar', 'salon montemar'],
+
+      'salon-eventos-terramar-nivel-1': ['terramar', 'salon terramar'],
+
       'salon-eventos-altamar-nivel-1': [
         'altamar',
-        'salon altamar'
+        'alta mar',
+        'salon altamar',
+        'salon alta mar',
+        'sala altamar'
       ],
-      'restaurant-faro-nivel-3': [
-        'faro',
-        'restaurante faro'
+
+      'alma-spa-nivel-1': [
+        'alma spa',
+        'spa',
+        'el spa'
       ],
-      'piscina-acceso-escalones-nivel-3': [
-        'piscina exterior',
-        'piscina por escalones'
+
+      'restaurant-faro-nivel-3': ['faro', 'restaurante faro'],
+
+      'piscina-acceso-escalones-nivel-3': ['piscina exterior', 'piscina por escalones'],
+
+      'piscina-acceso-accesible-nivel-3': ['piscina exterior', 'piscina accesible', 'piscina por rampa'],
+
+      'canchas-tenis-nivel-3': ['tenis', 'cancha de tenis'],
+
+      'ascensor-habitaciones-piso-6': [
+        'ascensor habitaciones piso 6',
+        'ascensor piso 6',
+        'salida ascensor piso 6'
       ],
-      'piscina-acceso-accesible-nivel-3': [
-        'piscina exterior',
-        'piscina accesible',
-        'piscina por rampa'
+
+      'puerta-acceso-tinajas-piso-6': [
+        'puerta de las tinajas',
+        'acceso a las tinajas',
+        'entrada tinajas'
       ],
-      'canchas-tenis-nivel-3': [
-        'tenis',
-        'cancha de tenis'
+
+      'alma-spa-tinaja-piso-6': [
+        'alma spa tinaja',
+        'tinaja alma spa',
+        'tinajas',
+        'tinas calientes'
       ]
+
     };
 
-    return (
-      alias[nodoId] ?? []
-    );
+
+
+    return alias[nodoId] ?? [];
+
   }
 
-  private normalizarTexto(
-    texto: string
-  ): string {
+
+
+  private normalizarTexto(texto: string): string {
+
     return texto
+
       .normalize('NFD')
-      .replace(
-        /[\u0300-\u036f]/g,
-        ''
-      )
+
+      .replace(/[\u0300-\u036f]/g, '')
+
       .toLocaleLowerCase()
-      .replace(
-        /[^a-z0-9\s]/g,
-        ' '
-      )
-      .replace(
-        /\s+/g,
-        ' '
-      )
+
+      .replace(/[^a-z0-9\s]/g, ' ')
+
+      .replace(/\s+/g, ' ')
+
       .trim();
+
   }
 
-  private manejarErrorSeleccionVoz(
-    codigo: string
-  ): void {
-    const clave =
-      codigo === 'not-allowed' ||
-      codigo ===
-        'service-not-allowed' ||
+
+
+  private manejarErrorSeleccionVoz(codigo: string): void {
+    const clave = codigo === 'not-allowed' ||
+      codigo === 'service-not-allowed' ||
       codigo === 'audio-capture'
-        ? 'permisoMicrofonoDenegado'
-        : codigo === 'no-speech'
-          ? 'comandoVozSinResultado'
-          : 'errorReconocimientoVoz';
+      ? 'permisoMicrofonoDenegado'
+      : codigo === 'no-speech'
+        ? 'comandoVozSinResultado'
+        : 'errorReconocimientoVoz';
 
-    this.estadoSeleccionVoz =
-      this.traducir(clave);
+    this.estadoSeleccionVoz = this.traducir(clave);
   }
 
-  private manejarErrorComandoVoz(
-    codigo: string
-  ): void {
-    const clave =
-      codigo === 'not-allowed' ||
-      codigo ===
-        'service-not-allowed' ||
+  private manejarErrorComandoVoz(codigo: string): void {
+
+    const clave = codigo === 'not-allowed' ||
+
+      codigo === 'service-not-allowed' ||
+
       codigo === 'audio-capture'
-        ? 'permisoMicrofonoDenegado'
-        : codigo === 'no-speech'
-          ? 'comandoVozSinResultado'
-          : 'errorReconocimientoVoz';
 
-    this.comandoVozActivo =
-      false;
+      ? 'permisoMicrofonoDenegado'
 
-    this.estadoComandoVoz =
-      this.traducir(clave);
+      : codigo === 'no-speech'
+
+        ? 'comandoVozSinResultado'
+
+        : 'errorReconocimientoVoz';
+
+    this.comandoVozActivo = false;
+
+    this.estadoComandoVoz = this.traducir(clave);
+
   }
+
 }
