@@ -31,11 +31,13 @@ describe('HomePage', () => {
       fixture.componentInstance;
 
     component.seleccionarIdioma('es');
-    component.lugares = NODOS_HIPPOCAMPUS;
+    component.lugares =
+      NODOS_HIPPOCAMPUS;
   });
 
   it('should create', () => {
-    expect(component).toBeTruthy();
+    expect(component)
+      .toBeTruthy();
   });
 
   it(
@@ -131,7 +133,157 @@ describe('HomePage', () => {
         );
 
         expect(component.origen)
-          .toBe('hall-nivel-1');
+          .toBe(
+            'hall-nivel-1'
+          );
+      }
+    }
+  );
+
+  it(
+    'reconoce gimnasio mediante expresiones en inglés',
+    () => {
+      component.seleccionarIdioma(
+        'en'
+      );
+
+      component.lugares =
+        NODOS_HIPPOCAMPUS;
+
+      const expresiones = [
+        'gym',
+        'jim',
+        'gem',
+        'fitness',
+        'fitness center',
+        'fitness centre',
+        'fitness room'
+      ];
+
+      for (
+        const expresion of expresiones
+      ) {
+        component.destino = '';
+
+        component.procesarSeleccionVoz(
+          'destino',
+          expresion
+        );
+
+        expect(component.destino)
+          .toBe(
+            'gimnasio-nivel-1'
+          );
+      }
+    }
+  );
+
+  it(
+    'reconoce juegos de adultos mediante expresiones en inglés',
+    () => {
+      component.seleccionarIdioma(
+        'en'
+      );
+
+      component.lugares =
+        NODOS_HIPPOCAMPUS;
+
+      const expresiones = [
+        'adult',
+        'adults',
+        'adult game',
+        'adult games',
+        'adult game room',
+        'adult games area',
+        'game room',
+        'games room'
+      ];
+
+      for (
+        const expresion of expresiones
+      ) {
+        component.destino = '';
+
+        component.procesarSeleccionVoz(
+          'destino',
+          expresion
+        );
+
+        expect(component.destino)
+          .toBe(
+            'zona-juego-adulto-nivel-1'
+          );
+      }
+    }
+  );
+
+  it(
+    'reconoce gimnasio mediante expresiones en portugués',
+    () => {
+      component.seleccionarIdioma(
+        'pt'
+      );
+
+      component.lugares =
+        NODOS_HIPPOCAMPUS;
+
+      const expresiones = [
+        'academia',
+        'ginásio',
+        'ginasio',
+        'sala de ginástica',
+        'centro fitness'
+      ];
+
+      for (
+        const expresion of expresiones
+      ) {
+        component.destino = '';
+
+        component.procesarSeleccionVoz(
+          'destino',
+          expresion
+        );
+
+        expect(component.destino)
+          .toBe(
+            'gimnasio-nivel-1'
+          );
+      }
+    }
+  );
+
+  it(
+    'reconoce juegos de adultos mediante expresiones en portugués',
+    () => {
+      component.seleccionarIdioma(
+        'pt'
+      );
+
+      component.lugares =
+        NODOS_HIPPOCAMPUS;
+
+      const expresiones = [
+        'jogos adultos',
+        'sala de jogos adultos',
+        'área de jogos para adultos',
+        'jogos para adultos'
+      ];
+
+      for (
+        const expresion of expresiones
+      ) {
+        component.destino = '';
+
+        component.procesarSeleccionVoz(
+          'destino',
+          expresion
+        );
+
+        expect(component.destino)
+          .toBe(
+            'zona-juego-adulto-nivel-1'
+          );
       }
     }
   );
@@ -201,7 +353,9 @@ describe('HomePage', () => {
       vi.spyOn(
         component['rutaService'],
         'calcularDistanciaTotal'
-      ).mockReturnValue(15.272);
+      ).mockReturnValue(
+        15.272
+      );
 
       component.avanzarPaso();
 
@@ -220,14 +374,17 @@ describe('HomePage', () => {
         );
 
       expect(indicacion)
-        .toMatch(/\d+ metros/);
+        .toMatch(
+          /\d+ metros/
+        );
     }
   );
 
   it(
     'muestra fotos en las tarjetas de puntos de interés elegibles',
     () => {
-      component.nivelVisualizado = 1;
+      component.nivelVisualizado =
+        1;
 
       fixture.detectChanges();
 
