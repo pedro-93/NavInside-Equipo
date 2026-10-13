@@ -229,15 +229,6 @@ export const NODOS_HIPPOCAMPUS: Nodo[] = [
     restringido: false
   },
   {
-    id: 'salon-eventos-altamar-nivel-1',
-    nombre: 'Salón de Eventos Altamar',
-    x: 430,
-    y: 164,
-    tipo: 'salon',
-    nivel: 1,
-    restringido: false
-  },
-  {
     id: 'alma-spa-nivel-1',
     nombre: 'Alma Spa',
     x: 272,
@@ -493,14 +484,6 @@ export const CONEXIONES_HIPPOCAMPUS: Conexion[] = [
   },
   {
     origen: 'hall-nivel-1',
-    destino: 'salon-eventos-altamar-nivel-1',
-    distancia: 32.184,
-    tipo: 'pasillo',
-    restringida: false,
-    habilitada: true
-  },
-  {
-    origen: 'hall-nivel-1',
     destino: 'alma-spa-nivel-1',
     distancia: 26.521,
     tipo: 'pasillo',
@@ -533,8 +516,7 @@ export const CONEXIONES_HIPPOCAMPUS: Conexion[] = [
   }
 ];
 
-export const LUGARES_HIPPOCAMPUS_PRELIMINARES:
-  LugarPlano[] =
+export const LUGARES_HIPPOCAMPUS_PRELIMINARES: LugarPlano[] =
   NODOS_HIPPOCAMPUS.map(nodo => ({
     id: nodo.id,
     nombre: nodo.nombre,
@@ -551,14 +533,12 @@ export const LUGARES_HIPPOCAMPUS_PRELIMINARES:
         : 'confirmado'
   }));
 
-export const MAPA_ACTIVO:
-  MapaNavegacion = {
+export const MAPA_ACTIVO: MapaNavegacion = {
   id: 'hippocampus-resort',
   nombre: 'Hippocampus Resort & Club',
   descripcion:
     'Grafo de referencia construido con mediciones realizadas en terreno.',
   estado: 'referencia',
   nodos: NODOS_HIPPOCAMPUS,
-  conexiones:
-    CONEXIONES_HIPPOCAMPUS
+  conexiones: CONEXIONES_HIPPOCAMPUS
 };
