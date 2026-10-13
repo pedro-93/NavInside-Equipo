@@ -1,5 +1,5 @@
 import {
-  afterEach,
+  
   beforeEach,
   describe,
   expect,
@@ -153,10 +153,6 @@ describe.sequential(
 
       servicio =
         new MapaService();
-    });
-
-    afterEach(() => {
-      vi.restoreAllMocks();
     });
 
     it(
