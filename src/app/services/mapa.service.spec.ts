@@ -155,10 +155,6 @@ describe.sequential(
         new MapaService();
     });
 
-    (() => {
-      
-    });
-
     it(
       'inicia usando el respaldo local',
       () => {
