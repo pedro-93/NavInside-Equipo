@@ -40,6 +40,17 @@ interface FilaConexionSupabase {
   habilitada: boolean;
 }
 
+export type OrigenDatosMapa =
+  | 'local'
+  | 'supabase';
+
+export interface EstadoCargaMapa {
+  origenActivo: OrigenDatosMapa;
+  ultimaComprobacion: string | null;
+  ultimaCargaExitosa: string | null;
+  ultimoIntentoExitoso: boolean | null;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -58,8 +69,26 @@ export class MapaService {
       MAPA_ACTIVO
     );
 
+  private origenActivo:
+    OrigenDatosMapa = 'local';
+
+  private ultimaComprobacion:
+    string | null = null;
+
+  private ultimaCargaExitosa:
+    string | null = null;
+
+  private ultimoIntentoExitoso:
+    boolean | null = null;
+
   async cargarMapaDesdeSupabase():
     Promise<boolean> {
+    const fechaIntento =
+      new Date().toISOString();
+
+    this.ultimaComprobacion =
+      fechaIntento;
+
     try {
       const {
         data: mapa,
@@ -79,7 +108,7 @@ export class MapaService {
           errorMapa
         );
 
-        return false;
+        return this.registrarFalloCarga();
       }
 
       const {
@@ -118,7 +147,9 @@ export class MapaService {
         errorNodos ||
         errorConexiones ||
         !nodos ||
-        !conexiones
+        !conexiones ||
+        nodos.length === 0 ||
+        conexiones.length === 0
       ) {
         console.warn(
           'No se pudieron cargar nodos o conexiones.',
@@ -126,7 +157,7 @@ export class MapaService {
             errorConexiones
         );
 
-        return false;
+        return this.registrarFalloCarga();
       }
 
       this.mapaActivo = {
@@ -148,6 +179,15 @@ export class MapaService {
           )
       };
 
+      this.origenActivo =
+        'supabase';
+
+      this.ultimaCargaExitosa =
+        fechaIntento;
+
+      this.ultimoIntentoExitoso =
+        true;
+
       return true;
     } catch (error) {
       console.warn(
@@ -155,8 +195,22 @@ export class MapaService {
         error
       );
 
-      return false;
+      return this.registrarFalloCarga();
     }
+  }
+
+  obtenerEstadoCarga():
+    EstadoCargaMapa {
+    return {
+      origenActivo:
+        this.origenActivo,
+      ultimaComprobacion:
+        this.ultimaComprobacion,
+      ultimaCargaExitosa:
+        this.ultimaCargaExitosa,
+      ultimoIntentoExitoso:
+        this.ultimoIntentoExitoso
+    };
   }
 
   obtenerMapaActivo():
@@ -164,6 +218,14 @@ export class MapaService {
     return this.crearCopiaMapa(
       this.mapaActivo
     );
+  }
+
+  private registrarFalloCarga():
+    false {
+    this.ultimoIntentoExitoso =
+      false;
+
+    return false;
   }
 
   obtenerNodosNavegables():
