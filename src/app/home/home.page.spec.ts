@@ -4,6 +4,7 @@ import {
 } from '@angular/core/testing';
 
 import {
+  afterEach,
   beforeEach,
   describe,
   expect,
@@ -19,11 +20,17 @@ import {
   HomePage
 } from './home.page';
 
+import { MapaService } from '../services/mapa.service';
+
 describe('HomePage', () => {
   let component: HomePage;
   let fixture: ComponentFixture<HomePage>;
 
   beforeEach(() => {
+    // Las pruebas usan el mapa local: evitar cargas remotas asincronas.
+    vi.spyOn(MapaService.prototype, 'cargarMapaDesdeSupabase')
+      .mockResolvedValue(false);
+
     fixture =
       TestBed.createComponent(HomePage);
 
@@ -33,6 +40,10 @@ describe('HomePage', () => {
     component.seleccionarIdioma('es');
     component.lugares =
       NODOS_HIPPOCAMPUS;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('should create', () => {
