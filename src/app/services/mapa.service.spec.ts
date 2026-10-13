@@ -156,7 +156,7 @@ describe.sequential(
     });
 
     (() => {
-      vi.restoreAllMocks();
+      
     });
 
     it(
