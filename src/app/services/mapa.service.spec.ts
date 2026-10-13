@@ -104,7 +104,7 @@ vi.mock(
   })
 );
 
-describe('MapaService', () => {
+describe.sequential('MapaService', () => {
   let servicio: MapaService;
 
   beforeEach(() => {
