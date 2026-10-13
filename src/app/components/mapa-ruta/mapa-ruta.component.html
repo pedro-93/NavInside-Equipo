@@ -259,48 +259,37 @@
       }
 
       @if (nodoActualVisual; as nodoActual) {
-  @if (mostrarMarcadorDireccion) {
-    <g
-      class="marcador-navegacion-posicion"
-      [style.transform]="
-        'translate(' +
-        nodoActual.xVisual +
-        'px, ' +
-        nodoActual.yVisual +
-        'px)'
-      "
-      aria-hidden="true"
-    >
-      <g
-        class="marcador-navegacion"
-        [style.transform]="
-          'rotate(' +
-          anguloDireccionActual +
-          'deg)'
-        "
-      >
-        <circle r="31" />
+        @if (mostrarMarcadorDireccion) {
+        <g
+          class="marcador-navegacion"
+          [attr.transform]="
+            'translate(' +
+            nodoActual.xVisual +
+            ' ' +
+            nodoActual.yVisual +
+            ')'
+          "
+          aria-hidden="true"
+        >
+          <circle r="31" />
 
-        <path
-          class="marcador-navegacion__hippocampus"
-          d="M 0 -25 C 10 -27 17 -20 15 -12 C 14 -6 8 -3 7 2 C 6 7 13 10 12 17 C 11 24 2 27 -5 23 C -11 19 -9 12 -4 10 C 1 8 4 13 1 16 C -1 18 -4 17 -3 15 C -7 18 -3 22 2 21 C 8 20 9 14 5 10 C 1 6 -1 1 0 -4 C 1 -9 7 -12 8 -17 C 9 -21 5 -23 1 -21 C -2 -20 -3 -17 -5 -14 L -10 -16 L -7 -22 C -5 -25 -2 -26 0 -25 Z"
-        />
-
-        <path
-          class="marcador-navegacion__hocico"
-          d="M 10 -21 L 19 -24 L 13 -16 Z"
-        />
-
-        <circle
-          class="marcador-navegacion__ojo"
-          cx="6"
-          cy="-19"
-          r="1.5"
-        />
-      </g>
-    </g>
-  }
-}
+          <path
+            class="marcador-navegacion__hippocampus"
+            d="M 0 -25 C 10 -27 17 -20 15 -12 C 14 -6 8 -3 7 2 C 6 7 13 10 12 17 C 11 24 2 27 -5 23 C -11 19 -9 12 -4 10 C 1 8 4 13 1 16 C -1 18 -4 17 -3 15 C -7 18 -3 22 2 21 C 8 20 9 14 5 10 C 1 6 -1 1 0 -4 C 1 -9 7 -12 8 -17 C 9 -21 5 -23 1 -21 C -2 -20 -3 -17 -5 -14 L -10 -16 L -7 -22 C -5 -25 -2 -26 0 -25 Z"
+          />
+          <path
+            class="marcador-navegacion__hocico"
+            d="M 10 -21 L 19 -24 L 13 -16 Z"
+          />
+          <circle
+            class="marcador-navegacion__ojo"
+            cx="6"
+            cy="-19"
+            r="1.5"
+          />
+        </g>
+        }
+      }
     </svg>
   </div>
   } @else {

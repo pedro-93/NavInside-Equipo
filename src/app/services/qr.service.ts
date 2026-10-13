@@ -6,11 +6,9 @@ import {
 import {
   DatosQrUbicacion
 } from '../models/qr-ubicacion.model';
-
 import {
   Nodo
 } from '../models/nodo.model';
-
 import {
   MapaService
 } from './mapa.service';
@@ -25,40 +23,37 @@ export class QrService {
   procesarCodigo(
     contenido: string
   ): Nodo | null {
-    const contenidoNormalizado =
-      contenido.trim();
-
-    if (!contenidoNormalizado) {
-      return null;
-    }
-
     const nodoIdSimple =
       this.extraerNodoIdSimple(
-        contenidoNormalizado
+        contenido
       );
 
     if (nodoIdSimple) {
-      return this.obtenerNodoValido(
-        nodoIdSimple
+      return (
+        this.mapaService.obtenerNodoPorId(
+          nodoIdSimple
+        ) ?? null
       );
     }
 
     try {
-      const datos: unknown =
+      const datos =
         JSON.parse(
-          contenidoNormalizado
-        );
+          contenido
+        ) as DatosQrUbicacion;
 
       if (
-        !this.esDatosQrUbicacion(
-          datos
-        )
+        datos.sistema !== 'navinside' ||
+        datos.version !== 1 ||
+        typeof datos.nodoId !== 'string'
       ) {
         return null;
       }
 
-      return this.obtenerNodoValido(
-        datos.nodoId
+      return (
+        this.mapaService.obtenerNodoPorId(
+          datos.nodoId
+        ) ?? null
       );
     } catch {
       return null;
@@ -68,77 +63,16 @@ export class QrService {
   private extraerNodoIdSimple(
     contenido: string
   ): string | null {
-    const prefijo =
-      'NAVINSIDE:';
+    const prefijo = 'NAVINSIDE:';
 
-    if (
-      !contenido.startsWith(
-        prefijo
-      )
-    ) {
+    if (!contenido.startsWith(prefijo)) {
       return null;
     }
 
-    const nodoId =
-      contenido
-        .slice(
-          prefijo.length
-        )
-        .trim();
+    const nodoId = contenido
+      .slice(prefijo.length)
+      .trim();
 
     return nodoId || null;
-  }
-
-  private esDatosQrUbicacion(
-    datos: unknown
-  ): datos is DatosQrUbicacion {
-    if (
-      typeof datos !== 'object' ||
-      datos === null ||
-      Array.isArray(datos)
-    ) {
-      return false;
-    }
-
-    const candidato =
-      datos as Partial<
-        DatosQrUbicacion
-      >;
-
-    return (
-      candidato.sistema ===
-        'navinside' &&
-      candidato.version === 1 &&
-      typeof candidato.nodoId ===
-        'string' &&
-      candidato.nodoId.trim()
-        .length > 0
-    );
-  }
-
-  private obtenerNodoValido(
-    nodoId: string
-  ): Nodo | null {
-    const idNormalizado =
-      nodoId.trim();
-
-    if (!idNormalizado) {
-      return null;
-    }
-
-    const nodo =
-      this.mapaService
-        .obtenerNodoPorId(
-          idNormalizado
-        );
-
-    if (
-      !nodo ||
-      nodo.restringido === true
-    ) {
-      return null;
-    }
-
-    return nodo;
   }
 }
