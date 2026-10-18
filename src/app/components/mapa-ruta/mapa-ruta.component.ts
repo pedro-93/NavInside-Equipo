@@ -15,10 +15,16 @@ import {
 } from '@angular/common';
 
 import {
+  ChangeDetectorRef,
   Component,
   EventEmitter,
+  inject,
   Input,
-  Output
+  NgZone,
+  OnChanges,
+  OnDestroy,
+  Output,
+  SimpleChanges
 } from '@angular/core';
 
 import {
@@ -56,6 +62,11 @@ interface ConexionVisual {
   habilitada: boolean;
 }
 
+interface PuntoMapa {
+  x: number;
+  y: number;
+}
+
 @Component({
   selector: 'app-mapa-ruta',
   standalone: true,
@@ -67,9 +78,26 @@ interface ConexionVisual {
   styleUrl:
     './mapa-ruta.component.scss'
 })
-export class MapaRutaComponent {
+export class MapaRutaComponent implements OnChanges, OnDestroy {
+  private readonly detector = inject(ChangeDetectorRef);
+  private readonly zona = inject(NgZone);
+  private cursorAnimado: PuntoMapa | null = null;
+  private frameAnimacion = 0;
+  private anguloCursorAnimado = 0;
+  private frameFinalizacion = 0;
+  private centroSeguimiento: PuntoMapa | null = null;
+
+  zoom = 1;
+  seguirCursor = true;
+
   @Output()
   puntoMapaSeleccionado = new EventEmitter<string>();
+
+  @Output()
+  movimientoRutaIniciado = new EventEmitter<number>();
+
+  @Output()
+  movimientoRutaCompletado = new EventEmitter<void>();
 
   @Input()
   nodos: Nodo[] = [];
@@ -82,6 +110,9 @@ export class MapaRutaComponent {
 
   @Input()
   nivel = 1;
+
+  @Input()
+  duracionVozObjetivoMs = 0;
 
   @Input()
   usarPlanoReal = false;
@@ -188,6 +219,85 @@ export class MapaRutaComponent {
   textoNotaAccesoEscaleras =
     'Ubicaciones corroboradas en terreno. Las escaleras son parte del acceso al Gimnasio y a Juegos Adultos.';
 
+  ngOnChanges(cambios: SimpleChanges): void {
+    const cambioNodo = cambios['nodoActualId'];
+    const cambioRuta = cambios['ruta'];
+    const cambioNivel = !!cambios['nivel'] || !!cambios['usarPlanoReal'];
+    const cambioDatos = !!cambios['nodos'];
+
+    if (!cambioNodo && !cambioRuta && !cambioNivel && !cambioDatos) {
+      return;
+    }
+
+    this.cancelarAnimacion();
+    const visual = this.nodoActualVisual;
+    const destino = visual ? { x: visual.xVisual, y: visual.yVisual } : null;
+
+    if (cambioNivel || cambioRuta || cambioDatos) {
+      this.zoom = 1;
+      this.centroSeguimiento = null;
+      this.seguirCursor = true;
+    }
+
+    if (!destino) {
+      this.cursorAnimado = null;
+      this.zoom = 1;
+      this.centroSeguimiento = null;
+      this.detector.markForCheck();
+      return;
+    }
+
+    if (cambioNivel || cambioRuta || cambioDatos ||
+        !cambioNodo || !cambioNodo.previousValue) {
+      this.cursorAnimado = destino;
+      this.anguloCursorAnimado = this.obtenerAnguloSalida();
+      this.detector.markForCheck();
+      if (cambioNodo && cambioNodo.previousValue && this.navegacionActiva) {
+        this.programarFinalizacion();
+      }
+      return;
+    }
+
+    const anteriorId = cambioNodo.previousValue as string;
+    const anterior = this.nodosVisuales.find(item => item.nodo.id === anteriorId);
+    if (!anterior) {
+      this.cursorAnimado = destino;
+      this.anguloCursorAnimado = this.obtenerAnguloSalida();
+      this.detector.markForCheck();
+      this.programarFinalizacion();
+      return;
+    }
+
+    const inicio = this.cursorAnimado ?? {
+      x: anterior.xVisual,
+      y: anterior.yVisual
+    };
+    const intermedios = this.obtenerPuntosIntermedios(anteriorId, this.nodoActualId!);
+    this.animarCursor([
+      inicio,
+      ...intermedios.map(([x, y]) => ({ x, y })),
+      destino
+    ]);
+  }
+
+  ngOnDestroy(): void {
+    this.cancelarAnimacion();
+  }
+
+  private cancelarAnimacion(): void {
+    cancelAnimationFrame(this.frameAnimacion);
+    cancelAnimationFrame(this.frameFinalizacion);
+    this.frameAnimacion = 0;
+    this.frameFinalizacion = 0;
+  }
+
+  private programarFinalizacion(): void {
+    this.frameFinalizacion = requestAnimationFrame(() => {
+      this.frameFinalizacion = 0;
+      this.zona.run(() => this.movimientoRutaCompletado.emit());
+    });
+  }
+
   get anchoVista(): number {
     return this.esMapaVisualNivel
       ? this.nivel === 1 ? 1600 : 1275
@@ -201,11 +311,52 @@ export class MapaRutaComponent {
   }
 
   get viewBoxMapa(): string {
-    if (this.esPlanoNivelTres) {
-      return '72 335 1203 470';
+    const [x, y, ancho, alto] = this.cajaBase;
+    const zoom = Math.max(1, Math.min(4, this.zoom));
+    if (!this.centroSeguimiento || zoom === 1) {
+      return `${x} ${y} ${ancho} ${alto}`;
     }
+    const anchoVisible = ancho / zoom;
+    const altoVisible = alto / zoom;
+    const izquierda = Math.max(x, Math.min(
+      x + ancho - anchoVisible,
+      this.centroSeguimiento.x - anchoVisible / 2
+    ));
+    const arriba = Math.max(y, Math.min(
+      y + alto - altoVisible,
+      this.centroSeguimiento.y - altoVisible / 2
+    ));
+    return `${izquierda} ${arriba} ${anchoVisible} ${altoVisible}`;
+  }
 
-    return `0 0 ${this.anchoVista} ${this.altoVista}`;
+  private get cajaBase(): readonly [number, number, number, number] {
+    return this.esPlanoNivelTres
+      ? [72, 335, 1203, 470]
+      : [0, 0, this.anchoVista, this.altoVista];
+  }
+
+  ajustarPlano(): void {
+    this.zoom = 1;
+    this.seguirCursor = false;
+    this.centroSeguimiento = null;
+    this.detector.markForCheck();
+  }
+
+  centrarCursor(): void {
+    const cursor = this.posicionCursor;
+    if (!cursor) {
+      return;
+    }
+    this.seguirCursor = true;
+    this.zoom = this.nivel === 1 ? 2.5 : 2;
+    this.centroSeguimiento = { ...cursor };
+    this.detector.markForCheck();
+  }
+
+  private actualizarSeguimiento(punto: PuntoMapa): void {
+    if (this.seguirCursor) {
+      this.centroSeguimiento = { ...punto };
+    }
   }
 
   get imagenMapa(): string | null {
@@ -547,8 +698,23 @@ export class MapaRutaComponent {
     );
   }
 
+  get posicionCursor(): PuntoMapa | null {
+    if (this.cursorAnimado) {
+      return this.cursorAnimado;
+    }
+
+    const actual = this.nodoActualVisual;
+
+    return actual
+      ? {
+          x: actual.xVisual,
+          y: actual.yVisual
+        }
+      : null;
+  }
+
   get mostrarMarcadorDireccion(): boolean {
-    return this.nodoActualVisual !== null;
+    return this.posicionCursor !== null;
   }
 
   private trazarConexion(origen: NodoVisual, destino: NodoVisual): string {
@@ -582,39 +748,111 @@ export class MapaRutaComponent {
   }
 
   get anguloDireccionActual(): number {
+    return this.cursorAnimado
+      ? this.anguloCursorAnimado
+      : this.obtenerAnguloSalida();
+  }
+
+  private obtenerPuntosIntermedios(
+    origenId: string,
+    destinoId: string
+  ): readonly (readonly [number, number])[] {
+    const tramos = this.esPlanoRealNivelUno
+      ? TRAMOS_PLANO_NIVEL_UNO
+      : this.esPlanoNivelTres
+        ? TRAMOS_PLANO_NIVEL_TRES
+        : {};
+    return tramos[`${origenId}|${destinoId}`] ??
+      [...(tramos[`${destinoId}|${origenId}`] ?? [])].reverse();
+  }
+
+  private obtenerAnguloSalida(): number {
     const actual = this.nodoActualVisual;
-    const siguienteNodo =
-      this.obtenerSiguienteNodoRuta();
+    const siguiente = this.obtenerSiguienteNodoRuta();
+    if (!actual || !siguiente) {
+      return this.anguloCursorAnimado;
+    }
+    const inicio = { x: actual.xVisual, y: actual.yVisual };
+    const puntos = this.obtenerPuntosIntermedios(actual.nodo.id, siguiente.id);
+    const intermedio = puntos.find(([x, y]) => Math.hypot(x - inicio.x, y - inicio.y) > 0.01);
+    if (intermedio) {
+      return this.anguloEntrePuntos(inicio, { x: intermedio[0], y: intermedio[1] });
+    }
+    const destino = this.nodosVisuales.find(item => item.nodo.id === siguiente.id);
+    return destino
+      ? this.anguloEntrePuntos(inicio, { x: destino.xVisual, y: destino.yVisual })
+      : this.anguloCursorAnimado;
+  }
 
-    if (!actual || !siguienteNodo) {
-      return 0;
+  private anguloEntrePuntos(origen: PuntoMapa, destino: PuntoMapa): number {
+    return Math.atan2(destino.y - origen.y, destino.x - origen.x) * 180 / Math.PI + 90;
+  }
+
+  private animarCursor(puntos: PuntoMapa[]): void {
+    // Conserva los corredores exactos del plano; elimina solo puntos repetidos.
+    const camino = puntos.filter((punto, indice) => indice === 0 ||
+      Math.hypot(punto.x - puntos[indice - 1].x, punto.y - puntos[indice - 1].y) > 0.01);
+    const longitudes = camino.slice(1).map((punto, indice) =>
+      Math.hypot(punto.x - camino[indice].x, punto.y - camino[indice].y));
+    const distanciaTotal = longitudes.reduce((total, distancia) => total + distancia, 0);
+
+    if (camino.length < 2 || distanciaTotal <= 0) {
+      this.cursorAnimado = camino[camino.length - 1] ?? null;
+      if (this.cursorAnimado) {
+        this.actualizarSeguimiento(this.cursorAnimado);
+      }
+      this.detector.markForCheck();
+      this.programarFinalizacion();
+      return;
     }
 
-    const siguiente =
-      this.nodosVisuales.find(
-        nodoVisual =>
-          nodoVisual.nodo.id ===
-          siguienteNodo.id
-      );
-
-    if (!siguiente) {
-      return 0;
+    const velocidad = this.nivel === 1 ? 58 : 72;
+    const duracionMovimiento = Math.min(6500, Math.max(2400, distanciaTotal / velocidad * 1000));
+    const duracion = Math.min(7200, Math.max(duracionMovimiento, this.duracionVozObjetivoMs || 0));
+    const inicioAnimacion = performance.now();
+    let ultimoFrame = inicioAnimacion;
+    this.cursorAnimado = { ...camino[0] };
+    this.anguloCursorAnimado = this.anguloEntrePuntos(camino[0], camino[1]);
+    if (this.seguirCursor) {
+      this.zoom = this.nivel === 1 ? 2.5 : 2;
+      this.actualizarSeguimiento(this.cursorAnimado);
     }
+    this.zona.run(() => this.movimientoRutaIniciado.emit(duracion));
 
-    const diferenciaX =
-      siguiente.xVisual - actual.xVisual;
-    const diferenciaY =
-      siguiente.yVisual - actual.yVisual;
+    const animar = (ahora: number): void => {
+      const progreso = Math.max(0, Math.min(1, (ahora - inicioAnimacion) / duracion));
+      let restante = progreso * distanciaTotal;
+      let indice = 0;
+      while (indice < longitudes.length - 1 && restante > longitudes[indice]) {
+        restante -= longitudes[indice++];
+      }
+      const origen = camino[indice];
+      const destino = camino[indice + 1];
+      const proporcion = Math.min(1, restante / longitudes[indice]);
+      this.cursorAnimado = {
+        x: origen.x + (destino.x - origen.x) * proporcion,
+        y: origen.y + (destino.y - origen.y) * proporcion
+      };
+      const anguloObjetivo = this.anguloEntrePuntos(origen, destino);
+      const diferencia = ((anguloObjetivo - this.anguloCursorAnimado + 540) % 360 + 360) % 360 - 180;
+      const suavizado = 1 - Math.exp(-Math.max(0, ahora - ultimoFrame) / 90);
+      this.anguloCursorAnimado += diferencia * suavizado;
+      ultimoFrame = ahora;
+      this.actualizarSeguimiento(this.cursorAnimado);
+      this.detector.markForCheck();
 
-    return Math.round(
-      (Math.atan2(
-        diferenciaY,
-        diferenciaX
-      ) *
-        180) /
-        Math.PI +
-        90
-    );
+      if (progreso < 1) {
+        this.frameAnimacion = requestAnimationFrame(animar);
+        return;
+      }
+      this.cursorAnimado = { ...camino[camino.length - 1] };
+      this.anguloCursorAnimado = anguloObjetivo;
+      this.frameAnimacion = 0;
+      this.actualizarSeguimiento(this.cursorAnimado);
+      this.detector.markForCheck();
+      this.zona.run(() => this.movimientoRutaCompletado.emit());
+    };
+    this.frameAnimacion = requestAnimationFrame(animar);
   }
 
   identificarNodo(

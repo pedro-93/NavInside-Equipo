@@ -7,7 +7,8 @@ import {
   beforeEach,
   describe,
   expect,
-  it
+  it,
+  vi
 } from 'vitest';
 
 import {
@@ -211,132 +212,170 @@ describe('MapaRutaComponent', () => {
   it(
     'alinea el plano original aunque Supabase use coordenadas pequeñas y conserva el cursor al llegar',
     () => {
-      const nodos: Nodo[] = [
-        {
-          id: 'hall-nivel-1',
-          nombre: 'Hall',
-          x: 2,
-          y: 3,
-          nivel: 1,
-          tipo: 'pasillo'
-        },
-        {
-          id:
-            'gimnasio-nivel-1',
-          nombre: 'Gimnasio',
-          x: 4,
-          y: 5,
-          nivel: 1,
-          tipo: 'gimnasio'
-        }
-      ];
+      vi.useFakeTimers({
+        toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'performance']
+      });
 
-      fixture.componentRef.setInput(
-        'nodos',
-        nodos
-      );
-
-      fixture.componentRef.setInput(
-        'ruta',
-        nodos
-      );
-
-      fixture.componentRef.setInput(
-        'conexiones',
-        [
+      try {
+        const nodos: Nodo[] = [
           {
-            origen:
-              nodos[0].id,
-            destino:
-              nodos[1].id,
-            distancia:
-              15.272
+            id: 'hall-nivel-1',
+            nombre: 'Hall',
+            x: 2,
+            y: 3,
+            nivel: 1,
+            tipo: 'pasillo'
+          },
+          {
+            id:
+              'gimnasio-nivel-1',
+            nombre: 'Gimnasio',
+            x: 4,
+            y: 5,
+            nivel: 1,
+            tipo: 'gimnasio'
           }
-        ]
-      );
+        ];
 
-      fixture.componentRef.setInput(
-        'usarPlanoReal',
-        true
-      );
+        fixture.componentRef.setInput(
+          'nodos',
+          nodos
+        );
 
-      fixture.componentRef.setInput(
-        'nodoActualId',
-        nodos[0].id
-      );
+        fixture.componentRef.setInput(
+          'ruta',
+          nodos
+        );
 
-      fixture.detectChanges();
+        fixture.componentRef.setInput(
+          'conexiones',
+          [
+            {
+              origen:
+                nodos[0].id,
+              destino:
+                nodos[1].id,
+              distancia:
+                15.272
+            }
+          ]
+        );
 
-      const svg =
-        fixture.nativeElement
-          .querySelector(
-            'svg'
-          ) as SVGSVGElement;
+        fixture.componentRef.setInput(
+          'usarPlanoReal',
+          true
+        );
 
-      expect(
-        svg.getAttribute(
-          'viewBox'
-        )
-      ).toBe(
-        '0 0 1600 900'
-      );
+        fixture.componentRef.setInput(
+          'nodoActualId',
+          nodos[0].id
+        );
 
-      expect(
-        svg
-          .querySelector('image')
-          ?.getAttribute('href')
-      ).toContain(
-        'mapa-nivel-1-waze.webp'
-      );
+        fixture.detectChanges();
 
-      expect(
-        component
-          .nodoActualVisual
-          ?.xVisual
-      ).toBe(800);
+        const svg =
+          fixture.nativeElement
+            .querySelector(
+              'svg'
+            ) as SVGSVGElement;
 
-      expect(
-        component
-          .nodoActualVisual
-          ?.yVisual
-      ).toBe(455);
-
-      expect(
-        svg.querySelectorAll(
-          '.nodo-nombre'
-        ).length
-      ).toBe(0);
-
-      expect(
-        component
-          .conexionesVisuales[0]
-          .trazado
-      ).toContain(
-        '900 585'
-      );
-
-      fixture.componentRef.setInput(
-        'nodoActualId',
-        nodos[1].id
-      );
-
-      fixture.detectChanges();
-
-      expect(
-        svg
-          .querySelector<SVGGElement>(
-            '.marcador-navegacion-posicion'
+        expect(
+          svg.getAttribute(
+            'viewBox'
           )
-          ?.style.transform
-      ).toBe(
-        'translate(1070px, 826px)'
-      );
+        ).toBe(
+          '0 0 1600 900'
+        );
 
-      expect(
-        svg.querySelector(
-          '.marcador-navegacion__hippocampus'
-        )
-      ).not.toBeNull();
+        expect(
+          svg
+            .querySelector('image')
+            ?.getAttribute('href')
+        ).toContain(
+          'mapa-nivel-1-waze.webp'
+        );
+
+        expect(
+          component
+            .nodoActualVisual
+            ?.xVisual
+        ).toBe(800);
+
+        expect(
+          component
+            .nodoActualVisual
+            ?.yVisual
+        ).toBe(455);
+
+        expect(
+          svg.querySelectorAll(
+            '.nodo-nombre'
+          ).length
+        ).toBe(0);
+
+        expect(
+          component
+            .conexionesVisuales[0]
+            .trazado
+        ).toContain(
+          '900 585'
+        );
+
+        // Completa el frame de inicialización antes de observar el movimiento.
+        vi.advanceTimersToNextFrame();
+        fixture.detectChanges();
+
+        const movimientoIniciado = vi.spyOn(component.movimientoRutaIniciado, 'emit');
+        const movimientoCompletado = vi.spyOn(component.movimientoRutaCompletado, 'emit');
+
+        fixture.componentRef.setInput(
+          'nodoActualId',
+          nodos[1].id
+        );
+
+        fixture.detectChanges();
+
+        const marcador = () => svg.querySelector<SVGGElement>(
+          '.marcador-navegacion-posicion'
+        );
+
+        // Cambiar el nodo inicia el recorrido; el cursor aún está en el hall.
+        expect(marcador()?.style.transform).toBe('translate(800px, 455px)');
+        expect(movimientoIniciado).toHaveBeenCalledTimes(1);
+        expect(movimientoCompletado).not.toHaveBeenCalled();
+
+        vi.advanceTimersByTime(1000);
+        fixture.detectChanges();
+
+        expect(marcador()?.style.transform).not.toBe('translate(800px, 455px)');
+        expect(marcador()?.style.transform).not.toBe('translate(1070px, 826px)');
+        expect(movimientoCompletado).not.toHaveBeenCalled();
+
+        // Avanza el reloj simulado hasta completar la animación, sin espera real.
+        vi.advanceTimersByTime(8000);
+        fixture.detectChanges();
+
+        expect(movimientoCompletado).toHaveBeenCalledTimes(1);
+
+        expect(
+          svg
+            .querySelector<SVGGElement>(
+              '.marcador-navegacion-posicion'
+            )
+            ?.style.transform
+        ).toBe(
+          'translate(1070px, 826px)'
+        );
+
+        expect(
+          svg.querySelector(
+            '.marcador-navegacion__hippocampus'
+          )
+        ).not.toBeNull();
+      } finally {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+      }
     }
   );
 

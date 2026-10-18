@@ -864,6 +864,9 @@
         [origenId]="origenId"
         [destinoId]="destinoId"
         [nodoActualId]="nodoActualId"
+        [duracionVozObjetivoMs]="duracionVozPasoMs"
+        (movimientoRutaIniciado)="sincronizarVozConMovimiento($event)"
+        (movimientoRutaCompletado)="continuarRecorridoAutomatico()"
         [textoEtiqueta]="
           traducir(
             'mapaDelResort'
