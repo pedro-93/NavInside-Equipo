@@ -1,7 +1,4 @@
-<ion-content
-  fullscreen
-  class="inicio-hippocampus"
->
+<ion-content fullscreen class="inicio-hippocampus">
   <main class="inicio-hippocampus__contenido">
     <header class="barra-superior">
       <a
@@ -11,7 +8,6 @@
       >
         <span>Nav</span>Inside
       </a>
-
       <button
         class="boton-menu"
         type="button"
@@ -34,7 +30,6 @@
           <p class="menu-principal__titulo">
             {{ traducir('idioma') }}
           </p>
-
           <div class="selector-idioma">
             <button
               type="button"
@@ -43,7 +38,6 @@
             >
               ES · Español
             </button>
-
             <button
               type="button"
               [class.activo]="idiomaSeleccionado === 'en'"
@@ -51,7 +45,6 @@
             >
               EN · English
             </button>
-
             <button
               type="button"
               [class.activo]="idiomaSeleccionado === 'pt'"
@@ -61,18 +54,10 @@
             </button>
           </div>
         </div>
-
-        <a
-          href="#puntos-interes"
-          (click)="alternarMenu()"
-        >
+        <a href="#puntos-interes" (click)="alternarMenu()">
           {{ traducir('puntosInteres') }}
         </a>
-
-        <a
-          href="#navegacion"
-          (click)="alternarMenu()"
-        >
+        <a href="#navegacion" (click)="alternarMenu()">
           {{ traducir('planificarRuta') }}
         </a>
       </section>
@@ -87,13 +72,9 @@
         src="assets/hippocampus/resort-hero.webp"
         alt="Piscina, palmeras y vista al mar en Hippocampus Resort & Club"
       />
-
       <div class="inicio-hippocampus__marca">
         <p>NavInside</p>
-
-        <h1>
-          Hippocampus Resort & Club
-        </h1>
+        <h1>Hippocampus Resort & Club</h1>
       </div>
     </section>
 
@@ -104,24 +85,12 @@
     >
       <div class="seccion-encabezado">
         <div>
-          <p>
-            {{ traducir('explorarResort') }}
-          </p>
-
-          <h2>
-            {{ traducir('puntosInteres') }}
-          </h2>
+          <p>{{ traducir('explorarResort') }}</p>
+          <h2>{{ traducir('puntosInteres') }}</h2>
         </div>
-
         @if (nivelVisualizado === 6) {
           <span>
-            {{
-              idiomaSeleccionado === 'en'
-                ? 'Floor'
-                : idiomaSeleccionado === 'pt'
-                  ? 'Andar'
-                  : 'Piso'
-            }}
+            {{ idiomaSeleccionado === 'en' ? 'Floor' : idiomaSeleccionado === 'pt' ? 'Andar' : 'Piso' }}
             6
           </span>
         } @else {
@@ -134,95 +103,52 @@
 
       <nav
         class="selector-nivel-mapa"
-        [attr.aria-label]="
-          traducir(
-            'seleccionarNivelMapa'
-          )
-        "
+        [attr.aria-label]="traducir('seleccionarNivelMapa')"
       >
         <button
           type="button"
-          [class.activo]="
-            nivelVisualizado === 1
-          "
-          [attr.aria-pressed]="
-            nivelVisualizado === 1
-          "
+          [class.activo]="nivelVisualizado === 1"
+          [attr.aria-pressed]="nivelVisualizado === 1"
           (click)="mostrarNivelMapa(1)"
         >
           {{ traducir('nivel') }} 1
         </button>
-
         <button
           type="button"
-          [class.activo]="
-            nivelVisualizado === 3
-          "
-          [attr.aria-pressed]="
-            nivelVisualizado === 3
-          "
+          [class.activo]="nivelVisualizado === 3"
+          [attr.aria-pressed]="nivelVisualizado === 3"
           (click)="mostrarNivelMapa(3)"
         >
           {{ traducir('nivel') }} 3
         </button>
-
         <button
           type="button"
-          [class.activo]="
-            nivelVisualizado === 4
-          "
-          [attr.aria-pressed]="
-            nivelVisualizado === 4
-          "
+          [class.activo]="nivelVisualizado === 4"
+          [attr.aria-pressed]="nivelVisualizado === 4"
           (click)="mostrarNivelMapa(4)"
         >
           {{ traducir('nivel') }} 4
         </button>
-
         <button
           type="button"
-          [class.activo]="
-            nivelVisualizado === 6
-          "
-          [attr.aria-pressed]="
-            nivelVisualizado === 6
-          "
+          [class.activo]="nivelVisualizado === 6"
+          [attr.aria-pressed]="nivelVisualizado === 6"
           (click)="mostrarNivelMapa(6)"
         >
-          {{
-            idiomaSeleccionado === 'en'
-              ? 'Floor'
-              : idiomaSeleccionado === 'pt'
-                ? 'Andar'
-                : 'Piso'
-          }}
+          {{ idiomaSeleccionado === 'en' ? 'Floor' : idiomaSeleccionado === 'pt' ? 'Andar' : 'Piso' }}
           6
         </button>
       </nav>
 
       <div class="puntos-interes__lista">
-        @for (
-          punto of puntosInteresNivel;
-          track punto.id
-        ) {
+        @for (punto of puntosInteresNivel; track punto.id) {
           <button
             type="button"
             class="tarjeta-punto"
-            [class.seleccionado]="
-              destino === punto.id
-            "
-            (click)="
-              seleccionarPuntoInteres(
-                punto
-              )
-            "
+            [class.seleccionado]="destino === punto.id"
+            (click)="seleccionarPuntoInteres(punto)"
           >
-            @if (
-              fotoPuntoInteres(
-                punto.id
-              );
-              as foto
-            ) {
+            @if (fotoPuntoInteres(punto.id); as foto) {
               <img
                 class="tarjeta-punto__imagen"
                 [src]="foto.src"
@@ -230,25 +156,10 @@
                 loading="lazy"
               />
             } @else {
-              <span
-                class="tarjeta-punto__icono"
-                aria-hidden="true"
-              >
-                {{
-                  punto.tipo ===
-                  'gimnasio'
-                    ? '⌁'
-                    : punto.tipo ===
-                        'spa'
-                      ? '✦'
-                      : punto.tipo ===
-                          'salon'
-                        ? '▦'
-                        : '●'
-                }}
+              <span class="tarjeta-punto__icono" aria-hidden="true">
+                {{ punto.tipo === 'gimnasio' ? '⌁' : punto.tipo === 'spa' ? '✦' : punto.tipo === 'salon' ? '▦' : '●' }}
               </span>
             }
-
             <span class="tarjeta-punto__nombre">
               {{ nombreNodo(punto) }}
             </span>
@@ -257,99 +168,41 @@
       </div>
     </section>
 
-    <section
-      id="navegacion"
-      class="planificador-ruta"
-    >
+    <section id="navegacion" class="planificador-ruta">
       <div class="seccion-encabezado">
         <div>
-          <p>
-            {{
-              traducir(
-                'navegacionInterior'
-              )
-            }}
-          </p>
-
-          <h2>
-            {{
-              traducir(
-                'planificarRuta'
-              )
-            }}
-          </h2>
+          <p>{{ traducir('navegacionInterior') }}</p>
+          <h2>{{ traducir('planificarRuta') }}</h2>
         </div>
       </div>
 
       <div class="seleccion-voz">
         <label>
           {{ traducir('origen') }}
-
           <div class="seleccion-voz__control">
             <select
               [value]="origen"
-              (change)="
-                origen =
-                  $any(
-                    $event.target
-                  ).value;
-                cambiarSeleccionRuta()
-              "
+              (change)="origen = $any($event.target).value; cambiarSeleccionRuta()"
             >
               <option value="">
-                {{
-                  traducir(
-                    'seleccionarOrigen'
-                  )
-                }}
+                {{ traducir('seleccionarOrigen') }}
               </option>
-
-              @for (
-                lugar of lugares;
-                track lugar.id
-              ) {
+              @for (lugar of lugares; track lugar.id) {
                 <option [value]="lugar.id">
                   {{ nombreNodo(lugar) }}
                 </option>
               }
             </select>
-
             <button
               type="button"
               class="seleccion-voz__microfono"
-              (click)="
-                campoSeleccionVozActivo ===
-                'origen'
-                  ? detenerSeleccionVoz()
-                  : iniciarSeleccionVoz(
-                      'origen'
-                    )
-              "
-              [disabled]="
-                !reconocimientoVozDisponible
-              "
-              [attr.aria-pressed]="
-                campoSeleccionVozActivo ===
-                'origen'
-              "
-              [attr.aria-label]="
-                traducir(
-                  'seleccionarOrigenPorVoz'
-                )
-              "
+              (click)="campoSeleccionVozActivo === 'origen' ? detenerSeleccionVoz() : iniciarSeleccionVoz('origen')"
+              [disabled]="!reconocimientoVozDisponible"
+              [attr.aria-pressed]="campoSeleccionVozActivo === 'origen'"
+              [attr.aria-label]="traducir('seleccionarOrigenPorVoz')"
             >
-              <span aria-hidden="true">
-                🎙
-              </span>
-
-              {{
-                traducir(
-                  campoSeleccionVozActivo ===
-                  'origen'
-                    ? 'detenerComandoVoz'
-                    : 'hablarOrigen'
-                )
-              }}
+              <span aria-hidden="true">🎙</span>
+              {{ traducir(campoSeleccionVozActivo === 'origen' ? 'detenerComandoVoz' : 'hablarOrigen') }}
             </button>
           </div>
         </label>
@@ -358,86 +211,39 @@
       <div class="seleccion-voz">
         <label>
           {{ traducir('destino') }}
-
           <div class="seleccion-voz__control">
             <select
               [value]="destino"
-              (change)="
-                destino =
-                  $any(
-                    $event.target
-                  ).value;
-                cambiarSeleccionRuta()
-              "
+              (change)="destino = $any($event.target).value; cambiarSeleccionRuta()"
             >
               <option value="">
-                {{
-                  traducir(
-                    'seleccionarDestino'
-                  )
-                }}
+                {{ traducir('seleccionarDestino') }}
               </option>
-
-              @for (
-                lugar of lugares;
-                track lugar.id
-              ) {
-                @if (
-                  lugar.id !== origen
-                ) {
+              @for (lugar of lugares; track lugar.id) {
+                @if (lugar.id !== origen) {
                   <option [value]="lugar.id">
                     {{ nombreNodo(lugar) }}
                   </option>
                 }
               }
             </select>
-
             <button
               type="button"
               class="seleccion-voz__microfono"
-              (click)="
-                campoSeleccionVozActivo ===
-                'destino'
-                  ? detenerSeleccionVoz()
-                  : iniciarSeleccionVoz(
-                      'destino'
-                    )
-              "
-              [disabled]="
-                !reconocimientoVozDisponible
-              "
-              [attr.aria-pressed]="
-                campoSeleccionVozActivo ===
-                'destino'
-              "
-              [attr.aria-label]="
-                traducir(
-                  'seleccionarDestinoPorVoz'
-                )
-              "
+              (click)="campoSeleccionVozActivo === 'destino' ? detenerSeleccionVoz() : iniciarSeleccionVoz('destino')"
+              [disabled]="!reconocimientoVozDisponible"
+              [attr.aria-pressed]="campoSeleccionVozActivo === 'destino'"
+              [attr.aria-label]="traducir('seleccionarDestinoPorVoz')"
             >
-              <span aria-hidden="true">
-                🎙
-              </span>
-
-              {{
-                traducir(
-                  campoSeleccionVozActivo ===
-                  'destino'
-                    ? 'detenerComandoVoz'
-                    : 'hablarDestino'
-                )
-              }}
+              <span aria-hidden="true">🎙</span>
+              {{ traducir(campoSeleccionVozActivo === 'destino' ? 'detenerComandoVoz' : 'hablarDestino') }}
             </button>
           </div>
         </label>
       </div>
 
       @if (estadoSeleccionVoz) {
-        <p
-          class="seleccion-voz__estado"
-          aria-live="polite"
-        >
+        <p class="seleccion-voz__estado" aria-live="polite">
           {{ estadoSeleccionVoz }}
         </p>
       }
@@ -446,40 +252,15 @@
         <button
           class="comando-voz-ruta__boton"
           type="button"
-          (click)="
-            comandoVozActivo
-              ? detenerComandoVozRuta()
-              : iniciarComandoVozRuta()
-          "
-          [disabled]="
-            !reconocimientoVozDisponible
-          "
-          [attr.aria-pressed]="
-            comandoVozActivo
-          "
+          (click)="comandoVozActivo ? detenerComandoVozRuta() : iniciarComandoVozRuta()"
+          [disabled]="!reconocimientoVozDisponible"
+          [attr.aria-pressed]="comandoVozActivo"
         >
-          <span aria-hidden="true">
-            🎙
-          </span>
-
-          {{
-            traducir(
-              comandoVozActivo
-                ? 'detenerComandoVoz'
-                : 'pedirRutaPorVoz'
-            )
-          }}
+          <span aria-hidden="true">🎙</span>
+          {{ traducir(comandoVozActivo ? 'detenerComandoVoz' : 'pedirRutaPorVoz') }}
         </button>
-
         <p aria-live="polite">
-          {{
-            estadoComandoVoz ||
-              traducir(
-                reconocimientoVozDisponible
-                  ? 'ejemploComandoVoz'
-                  : 'reconocimientoVozNoDisponible'
-              )
-          }}
+          {{ estadoComandoVoz || traducir(reconocimientoVozDisponible ? 'ejemploComandoVoz' : 'reconocimientoVozNoDisponible') }}
         </p>
       </div>
 
@@ -487,27 +268,11 @@
         <input
           type="checkbox"
           [checked]="modoAccesible"
-          (change)="
-            modoAccesible =
-              !modoAccesible;
-            cambiarModoAccesible()
-          "
+          (change)="modoAccesible = !modoAccesible; cambiarModoAccesible()"
         />
-
         <span>
-          <strong>
-            {{
-              traducir(
-                'rutaAccesible'
-              )
-            }}
-          </strong>
-
-          {{
-            traducir(
-              'descripcionRutaAccesible'
-            )
-          }}
+          <strong>{{ traducir('rutaAccesible') }}</strong>
+          {{ traducir('descripcionRutaAccesible') }}
         </span>
       </label>
 
@@ -519,10 +284,33 @@
         {{ traducir('calcularRuta') }}
       </button>
 
-      @if (resultado) {
-        <p class="resultado-ruta">
-          {{ resultado }}
+      <div class="comando-voz-ruta">
+        <button
+          type="button"
+          class="comando-voz-ruta__boton"
+          (click)="leerQrReal()"
+          [disabled]="seguimientoIniciando"
+        >
+          {{ texto('Leer código QR', 'Scan QR code', 'Ler código QR') }}
+        </button>
+        <button
+          type="button"
+          class="comando-voz-ruta__boton"
+          (click)="simularLecturaQr()"
+          [disabled]="seguimientoFisicoSeleccionado || seguimientoIniciando"
+        >
+          {{ texto('Simular QR de la entrada', 'Simulate entrance QR', 'Simular QR da entrada') }}
+        </button>
+      </div>
+
+      @if (mensajeUbicacion) {
+        <p class="resultado-ruta" role="status">
+          {{ mensajeUbicacion }}
         </p>
+      }
+
+      @if (resultado) {
+        <p class="resultado-ruta">{{ resultado }}</p>
       }
     </section>
 
@@ -531,67 +319,28 @@
         id="paso-a-paso"
         class="guia-paso-a-paso"
         aria-live="polite"
-        [attr.aria-label]="
-          traducir('guiaRuta')
-        "
+        [attr.aria-label]="traducir('guiaRuta')"
       >
         <div class="guia-paso-a-paso__cabecera">
-          <div
-            class="guia-paso-a-paso__direccion"
-            aria-hidden="true"
-          >
+          <div class="guia-paso-a-paso__direccion" aria-hidden="true">
             ➜
           </div>
-
           <div>
-            <p>
-              {{ traducir('guiaRuta') }}
-            </p>
-
-            <h2>
-              {{ instruccionActual }}
-            </h2>
+            <p>{{ traducir('guiaRuta') }}</p>
+            <h2>{{ instruccionActual }}</h2>
           </div>
-
-          <strong>
-            {{ progresoRuta }}%
-          </strong>
+          <strong>{{ progresoRuta }}%</strong>
         </div>
 
-        <div
-          class="guia-paso-a-paso__progreso"
-          aria-hidden="true"
-        >
-          <i
-            [style.width.%]="
-              progresoRuta
-            "
-          ></i>
+        <div class="guia-paso-a-paso__progreso" aria-hidden="true">
+          <i [style.width.%]="progresoRuta"></i>
         </div>
 
         <p class="guia-paso-a-paso__estado">
-          {{
-            traducir(
-              'pasoDe',
-              {
-                actual:
-                  numeroPasoActual,
-                total:
-                  totalPasos
-              }
-            )
-          }}
+          {{ traducir('pasoDe', { actual: numeroPasoActual, total: totalPasos }) }}
           ·
           @if (nivelVisualizado === 6) {
-            {{
-              idiomaSeleccionado ===
-              'en'
-                ? 'Floor'
-                : idiomaSeleccionado ===
-                    'pt'
-                  ? 'Andar'
-                  : 'Piso'
-            }}
+            {{ idiomaSeleccionado === 'en' ? 'Floor' : idiomaSeleccionado === 'pt' ? 'Andar' : 'Piso' }}
             6
           } @else {
             {{ traducir('nivel') }}
@@ -601,173 +350,249 @@
 
         <dl class="guia-paso-a-paso__distancias">
           <div>
-            <dt>
-              {{
-                traducir(
-                  'distanciaTotal'
-                )
-              }}
-            </dt>
-
+            <dt>{{ traducir('distanciaTotal') }}</dt>
             <dd>
-              {{
-                formatearMetros(
-                  distanciaTotal ?? 0
-                )
-              }}
+              {{ formatearMetros(distanciaTotal ?? 0) }}
               {{ traducir('unidades') }}
             </dd>
           </div>
-
           <div>
-            <dt>
-              {{
-                traducir(
-                  'distanciaRestante'
-                )
-              }}
-            </dt>
-
+            <dt>{{ traducir('distanciaRestante') }}</dt>
             <dd>
-              {{
-                formatearMetros(
-                  distanciaRestante
-                )
-              }}
+              {{ formatearMetros(distanciaRestante) }}
               {{ traducir('unidades') }}
             </dd>
           </div>
-
           <div>
-            <dt>
-              {{
-                traducir(
-                  'proximoTramo'
-                )
-              }}
-            </dt>
-
+            <dt>{{ traducir('proximoTramo') }}</dt>
             <dd>
-              {{
-                formatearMetros(
-                  distanciaProximoTramo
-                )
-              }}
+              {{ formatearMetros(distanciaProximoTramo) }}
               {{ traducir('unidades') }}
             </dd>
           </div>
         </dl>
 
+        @if (rutaCalculada.length > 1) {
+          <section
+            aria-labelledby="seguimiento-fisico-titulo"
+            aria-live="off"
+          >
+            <h3 id="seguimiento-fisico-titulo">
+              {{ texto('Seguir al caminar · Experimental', 'Track while walking · Experimental', 'Acompanhar ao caminhar · Experimental') }}
+            </h3>
+            <p
+              class="guia-paso-a-paso__demo"
+              id="seguimiento-fisico-ayuda"
+            >
+              {{ texto(
+                'El avance se estima con tus pasos sobre la ruta elegida. Puede acumular error y no detecta por sí solo si tomas otro camino. El GPS se muestra como referencia. Usa QR para corregir tu ubicación.',
+                'Progress is estimated from your steps along the selected route. Error can accumulate and taking another path is not detected automatically. GPS is shown as a reference. Use QR to correct your location.',
+                'O avanço é estimado pelos seus passos na rota escolhida. Pode acumular erros e não detecta sozinho se você segue outro caminho. O GPS é exibido como referência. Use QR para corrigir sua localização.'
+              ) }}
+            </p>
+
+            @if (!seguimientoFisicoSeleccionado) {
+              <p>
+                <label for="longitud-paso">
+                  {{ texto('Longitud estimada del paso, en metros', 'Estimated step length, in metres', 'Comprimento estimado do passo, em metros') }}
+                </label>
+                <input
+                  #entradaLongitudPaso
+                  id="longitud-paso"
+                  type="number"
+                  min="0.1"
+                  max="2"
+                  step="0.01"
+                  inputmode="decimal"
+                  [value]="longitudPasoMetros"
+                  (input)="cambiarLongitudPaso(entradaLongitudPaso.value)"
+                  [disabled]="seguimientoIniciando"
+                  aria-describedby="longitud-paso-ayuda"
+                />
+              </p>
+              <p
+                id="longitud-paso-ayuda"
+                class="guia-paso-a-paso__demo"
+              >
+                {{ texto(
+                  'El valor inicial de 0,65 m es orientativo. Para calibrarlo, divide una distancia conocida por la cantidad de pasos que das al recorrerla.',
+                  'The initial value of 0.65 m is an estimate. To calibrate it, divide a known distance by the number of steps you take along it.',
+                  'O valor inicial de 0,65 m é uma estimativa. Para calibrar, divida uma distância conhecida pelo número de passos que você dá ao percorrê-la.'
+                ) }}
+              </p>
+              <p>
+                <label>
+                  <input
+                    id="confirmar-origen-seguimiento"
+                    type="checkbox"
+                    [checked]="origenConfirmadoSeguimiento"
+                    (change)="origenConfirmadoSeguimiento = $any($event.target).checked"
+                    [disabled]="seguimientoIniciando"
+                  />
+                  {{ texto('Estoy en', 'I am at', 'Estou em') }}
+                  {{ nombreOrigenSeguimiento }}
+                </label>
+              </p>
+              <div class="guia-paso-a-paso__acciones">
+                <button
+                  type="button"
+                  class="guia-paso-a-paso__siguiente"
+                  (click)="iniciarSeguimientoFisico()"
+                  [disabled]="!puedeIniciarSeguimientoFisico"
+                  aria-describedby="seguimiento-fisico-ayuda"
+                >
+                  {{ texto('Iniciar al caminar', 'Start walking navigation', 'Iniciar ao caminhar') }}
+                </button>
+              </div>
+            } @else {
+              <p class="guia-paso-a-paso__estado">
+                {{ textoEstadoGps }} ·
+                {{ texto('Movimiento', 'Motion', 'Movimento') }}:
+                {{ etiquetaEstadoSensor(estadoSensores.movimiento) }}
+              </p>
+              <p class="guia-paso-a-paso__estado">
+                {{ texto('Pasos estimados', 'Estimated steps', 'Passos estimados') }}:
+                {{ seguimientoFisico?.pasosEstimados ?? 0 }}
+              </p>
+
+              @if (seguimientoIniciando) {
+                <p role="status">
+                  {{ texto('Preparando sensores…', 'Preparing sensors…', 'Preparando sensores…') }}
+                </p>
+              }
+
+              @if (estadoSensores.movimiento === 'esperando') {
+                <p class="guia-paso-a-paso__demo">
+                  {{ texto(
+                    'Esperando movimiento del teléfono. En un computador el cursor no avanzará al caminar.',
+                    'Waiting for phone motion. Walking navigation does not work on a desktop computer.',
+                    'Aguardando movimento do telefone. A navegação ao caminhar não funciona em um computador.'
+                  ) }}
+                </p>
+              }
+
+              @if (estadoSensores.movimiento === 'error' || estadoSensores.movimiento === 'sin-permiso') {
+                <p role="status">
+                  {{ texto(
+                    'No se reciben lecturas de movimiento. Revisa los permisos y prueba desde la aplicación del teléfono.',
+                    'Motion readings are unavailable. Check permissions and try the app on your phone.',
+                    'As leituras de movimento estão indisponíveis. Verifique as permissões e teste o aplicativo no telefone.'
+                  ) }}
+                </p>
+              }
+
+              <div class="guia-paso-a-paso__acciones">
+                @if (seguimientoFisico?.fase === 'pausado') {
+                  <button
+                    type="button"
+                    (click)="reanudarSeguimientoFisico()"
+                    [disabled]="seguimientoIniciando || comandoVozActivo || campoSeleccionVozActivo !== null"
+                  >
+                    {{ texto('Reanudar al caminar', 'Resume walking navigation', 'Retomar ao caminhar') }}
+                  </button>
+                }
+
+                @if (seguimientoFisico?.fase === 'siguiendo' || seguimientoFisico?.fase === 'confirmar-nivel') {
+                  <button
+                    type="button"
+                    (click)="pausarSeguimientoFisico()"
+                    [disabled]="seguimientoIniciando"
+                  >
+                    {{ texto('Pausar seguimiento', 'Pause tracking', 'Pausar acompanhamento') }}
+                  </button>
+                }
+
+                @if (seguimientoFisico?.fase === 'confirmar-nivel' || seguimientoFisico?.fase === 'llegada-estimada') {
+                  <button
+                    type="button"
+                    (click)="confirmarUbicacionSeguimiento()"
+                    [disabled]="seguimientoIniciando"
+                  >
+                    {{ texto('Confirmo que estoy en', 'I confirm I am at', 'Confirmo que estou em') }}
+                    {{ nombreNodoConfirmacion }}
+                  </button>
+                }
+
+                @if (seguimientoFisico?.fase !== 'completado') {
+                  <button
+                    type="button"
+                    (click)="leerQrReal()"
+                    [disabled]="seguimientoIniciando"
+                  >
+                    {{ texto('Corregir ubicación con QR', 'Correct location with QR', 'Corrigir localização com QR') }}
+                  </button>
+                }
+
+                <button
+                  type="button"
+                  (click)="finalizarSeguimientoFisico()"
+                >
+                  {{ texto('Salir del seguimiento', 'Exit tracking', 'Sair do acompanhamento') }}
+                </button>
+              </div>
+            }
+
+            @if (errorSeguimiento) {
+              <p role="alert">{{ errorSeguimiento }}</p>
+            }
+          </section>
+        }
+
         <div class="guia-paso-a-paso__acciones">
           <button
             type="button"
             (click)="retrocederPaso()"
-            [disabled]="esPrimerPaso"
+            [disabled]="esPrimerPaso || seguimientoFisicoSeleccionado || seguimientoIniciando"
           >
-            ←
-            {{
-              traducir(
-                'pasoAnterior'
-              )
-            }}
+            ← {{ traducir('pasoAnterior') }}
           </button>
-
           <button
             type="button"
             class="guia-paso-a-paso__siguiente"
             (click)="avanzarPaso()"
-            [disabled]="esUltimoPaso"
+            [disabled]="esUltimoPaso || seguimientoFisicoSeleccionado || seguimientoIniciando"
           >
-            {{
-              traducir(
-                'pasoSiguiente'
-              )
-            }}
-            →
+            {{ traducir('pasoSiguiente') }} →
           </button>
-
           <button
             type="button"
             class="guia-paso-a-paso__automatico"
-            (click)="
-              recorridoAutomaticoActivo
-                ? detenerRecorridoAutomatico()
-                : iniciarRecorridoAutomatico()
-            "
-            [disabled]="
-              esUltimoPaso &&
-              !recorridoAutomaticoActivo
-            "
+            (click)="recorridoAutomaticoActivo ? detenerRecorridoAutomatico() : iniciarRecorridoAutomatico()"
+            [disabled]="seguimientoFisicoSeleccionado || seguimientoIniciando || (esUltimoPaso && !recorridoAutomaticoActivo)"
           >
-            {{
-              traducir(
-                recorridoAutomaticoActivo
-                  ? 'pausarCursor'
-                  : 'iniciarCursor'
-              )
-            }}
+            {{ recorridoAutomaticoActivo ? texto('Pausar simulación', 'Pause simulation', 'Pausar simulação') : texto('Simular recorrido', 'Simulate route', 'Simular percurso') }}
           </button>
-
           <button
             type="button"
-            (click)="
-              alternarAsistenteVoz()
-            "
+            (click)="alternarAsistenteVoz()"
             [disabled]="!vozDisponible"
-            [attr.aria-pressed]="
-              asistenteVozActivo
-            "
+            [attr.aria-pressed]="asistenteVozActivo"
           >
-            {{
-              traducir(
-                asistenteVozActivo
-                  ? 'silenciarAsistenteVoz'
-                  : 'activarAsistenteVoz'
-              )
-            }}
+            {{ traducir(asistenteVozActivo ? 'silenciarAsistenteVoz' : 'activarAsistenteVoz') }}
           </button>
-
           <button
             type="button"
-            (click)="
-              repetirIndicacionVoz()
-            "
+            (click)="repetirIndicacionVoz()"
             [disabled]="!vozDisponible"
           >
-            {{
-              traducir(
-                'repetirIndicacionVoz'
-              )
-            }}
+            {{ traducir('repetirIndicacionVoz') }}
           </button>
-
           <button
             type="button"
             class="guia-paso-a-paso__reiniciar"
             (click)="reiniciarRecorrido()"
           >
-            ↺
-            {{
-              traducir(
-                'reiniciarRuta'
-              )
-            }}
+            ↺ {{ traducir('reiniciarRuta') }}
           </button>
         </div>
 
-        <p
-          class="guia-paso-a-paso__voz"
-          aria-live="polite"
-        >
+        <p class="guia-paso-a-paso__voz" aria-live="polite">
           {{ estadoAsistenteVoz }}
         </p>
-
         <p class="guia-paso-a-paso__demo">
-          {{
-            traducir(
-              'cursorDemostracion'
-            )
-          }}
+          @if (!seguimientoFisicoSeleccionado) {
+            {{ traducir('cursorDemostracion') }}
+          }
         </p>
       </section>
     }
@@ -778,68 +603,39 @@
     >
       <nav
         class="selector-nivel-mapa"
-        [attr.aria-label]="
-          traducir(
-            'seleccionarNivelMapa'
-          )
-        "
+        [attr.aria-label]="traducir('seleccionarNivelMapa')"
       >
         <button
           type="button"
-          [class.activo]="
-            nivelVisualizado === 1
-          "
-          [attr.aria-pressed]="
-            nivelVisualizado === 1
-          "
+          [class.activo]="nivelVisualizado === 1"
+          [attr.aria-pressed]="nivelVisualizado === 1"
           (click)="mostrarNivelMapa(1)"
         >
           {{ traducir('nivel') }} 1
         </button>
-
         <button
           type="button"
-          [class.activo]="
-            nivelVisualizado === 3
-          "
-          [attr.aria-pressed]="
-            nivelVisualizado === 3
-          "
+          [class.activo]="nivelVisualizado === 3"
+          [attr.aria-pressed]="nivelVisualizado === 3"
           (click)="mostrarNivelMapa(3)"
         >
           {{ traducir('nivel') }} 3
         </button>
-
         <button
           type="button"
-          [class.activo]="
-            nivelVisualizado === 4
-          "
-          [attr.aria-pressed]="
-            nivelVisualizado === 4
-          "
+          [class.activo]="nivelVisualizado === 4"
+          [attr.aria-pressed]="nivelVisualizado === 4"
           (click)="mostrarNivelMapa(4)"
         >
           {{ traducir('nivel') }} 4
         </button>
-
         <button
           type="button"
-          [class.activo]="
-            nivelVisualizado === 6
-          "
-          [attr.aria-pressed]="
-            nivelVisualizado === 6
-          "
+          [class.activo]="nivelVisualizado === 6"
+          [attr.aria-pressed]="nivelVisualizado === 6"
           (click)="mostrarNivelMapa(6)"
         >
-          {{
-            idiomaSeleccionado === 'en'
-              ? 'Floor'
-              : idiomaSeleccionado === 'pt'
-                ? 'Andar'
-                : 'Piso'
-          }}
+          {{ idiomaSeleccionado === 'en' ? 'Floor' : idiomaSeleccionado === 'pt' ? 'Andar' : 'Piso' }}
           6
         </button>
       </nav>
@@ -849,169 +645,53 @@
         [conexiones]="conexionesMapa"
         [ruta]="rutaCalculada"
         [nivel]="nivelVisualizado"
-        [usarPlanoReal]="
-          nivelVisualizado === 1 ||
-          nivelVisualizado === 3
-        "
-        [mostrarGuiaFisicaNivelUno]="
-          nivelVisualizado === 1
-        "
-        [textoUbicacionActual]="
-          traducir(
-            'cursorRecorrido'
-          )
-        "
+        [usarPlanoReal]="nivelVisualizado === 1 || nivelVisualizado === 3"
+        [mostrarGuiaFisicaNivelUno]="nivelVisualizado === 1"
+        [textoUbicacionActual]="traducir('cursorRecorrido')"
         [origenId]="origenId"
         [destinoId]="destinoId"
         [nodoActualId]="nodoActualId"
+        [seguimientoFisico]="seguimientoFisicoSeleccionado ? seguimientoFisico : null"
+        [textoLlegadaEstimada]="textoLlegadaEstimada"
+        [textoConfirmarNivel]="textoConfirmarNivel"
         [duracionVozObjetivoMs]="duracionVozPasoMs"
         (movimientoRutaIniciado)="sincronizarVozConMovimiento($event)"
         (movimientoRutaCompletado)="continuarRecorridoAutomatico()"
-        [textoEtiqueta]="
-          traducir(
-            'mapaDelResort'
-          )
-        "
-        [textoNivel]="
-          nivelVisualizado === 6
-            ? (
-                idiomaSeleccionado ===
-                'en'
-                  ? 'Floor'
-                  : idiomaSeleccionado ===
-                      'pt'
-                    ? 'Andar'
-                    : 'Piso'
-              )
-            : traducir('nivel')
-        "
-        [textoEstado]="
-          traducir(
-            'navegacionInterior'
-          )
-        "
-        [textoAriaMapa]="
-          'Mapa navegable de Hippocampus Resort, ' +
-          (
-            nivelVisualizado === 6
-              ? 'piso '
-              : 'nivel '
-          ) +
-          nivelVisualizado
-        "
-        [textoSinDatos]="
-          traducir(
-            'mapaSinDatos'
-          )
-        "
-        [textoNodo]="
-          traducir(
-            'puntoInteres'
-          )
-        "
-        [textoRuta]="
-          traducir(
-            'rutaCalculada'
-          )
-        "
-        [textoOrigen]="
-          traducir('origen')
-        "
-        [textoDestino]="
-          traducir('destino')
-        "
+        [textoEtiqueta]="traducir('mapaDelResort')"
+        [textoNivel]="nivelVisualizado === 6 ? (idiomaSeleccionado === 'en' ? 'Floor' : idiomaSeleccionado === 'pt' ? 'Andar' : 'Piso') : traducir('nivel')"
+        [textoEstado]="traducir('navegacionInterior')"
+        [textoAriaMapa]="'Mapa navegable de Hippocampus Resort, ' + (nivelVisualizado === 6 ? 'piso ' : 'nivel ') + nivelVisualizado"
+        [textoSinDatos]="traducir('mapaSinDatos')"
+        [textoNodo]="traducir('puntoInteres')"
+        [textoRuta]="traducir('rutaCalculada')"
+        [textoOrigen]="traducir('origen')"
+        [textoDestino]="traducir('destino')"
         textoAccesoCerrado="Acceso cerrado"
-        [textoNavegacion]="
-          traducir('guiaRuta')
-        "
-        [textoPaso]="
-          traducir('paso')
-        "
-        [textoSigueHacia]="
-          traducir(
-            'sigueHacia'
-          )
-        "
-        [textoLlegada]="
-          traducir('llegada')
-        "
-        [textoGuiaFisica]="
-          traducir(
-            'guiaFisicaNivelUno'
-          )
-        "
-        [textoDesdeAscensoresPrincipales]="
-          traducir(
-            'desdeAscensoresPrincipales'
-          )
-        "
-        [textoDesdeHall]="
-          traducir('desdeHall')
-        "
-        [textoIzquierda]="
-          traducir('izquierda')
-        "
-        [textoDerecha]="
-          traducir('derecha')
-        "
-        [textoRutaAscensoresIzquierda]="
-          traducir(
-            'rutaAscensoresIzquierda'
-          )
-        "
-        [textoRutaAscensoresDerecha]="
-          traducir(
-            'rutaAscensoresDerecha'
-          )
-        "
-        [textoRutaHallDerecha]="
-          traducir(
-            'rutaHallDerecha'
-          )
-        "
-        [textoRutaHallIzquierda]="
-          traducir(
-            'rutaHallIzquierda'
-          )
-        "
-        [textoNotaAccesoEscaleras]="
-          traducir(
-            'notaAccesoEscaleras'
-          )
-        "
-        (puntoMapaSeleccionado)="
-          seleccionarPuntoMapa(
-            $event
-          )
-        "
+        [textoNavegacion]="traducir('guiaRuta')"
+        [textoPaso]="traducir('paso')"
+        [textoSigueHacia]="traducir('sigueHacia')"
+        [textoLlegada]="traducir('llegada')"
+        [textoGuiaFisica]="traducir('guiaFisicaNivelUno')"
+        [textoDesdeAscensoresPrincipales]="traducir('desdeAscensoresPrincipales')"
+        [textoDesdeHall]="traducir('desdeHall')"
+        [textoIzquierda]="traducir('izquierda')"
+        [textoDerecha]="traducir('derecha')"
+        [textoRutaAscensoresIzquierda]="traducir('rutaAscensoresIzquierda')"
+        [textoRutaAscensoresDerecha]="traducir('rutaAscensoresDerecha')"
+        [textoRutaHallDerecha]="traducir('rutaHallDerecha')"
+        [textoRutaHallIzquierda]="traducir('rutaHallIzquierda')"
+        [textoNotaAccesoEscaleras]="traducir('notaAccesoEscaleras')"
+        (puntoMapaSeleccionado)="seleccionarPuntoMapa($event)"
       >
       </app-mapa-ruta>
 
-      @if (
-        fotoDestinoSeleccionado;
-        as foto
-      ) {
-        <aside
-          class="detalle-destino"
-          aria-live="polite"
-        >
-          <img
-            [src]="foto.src"
-            [alt]="foto.alt"
-          />
-
+      @if (fotoDestinoSeleccionado; as foto) {
+        <aside class="detalle-destino" aria-live="polite">
+          <img [src]="foto.src" [alt]="foto.alt" />
           <div>
-            <p>
-              {{ mensajeFotoDestino }}
-            </p>
-
-            @if (
-              destinoSeleccionado;
-              as lugar
-            ) {
-              <h3>
-                {{ nombreNodo(lugar) }}
-              </h3>
+            <p>{{ mensajeFotoDestino }}</p>
+            @if (destinoSeleccionado; as lugar) {
+              <h3>{{ nombreNodo(lugar) }}</h3>
             }
           </div>
         </aside>
