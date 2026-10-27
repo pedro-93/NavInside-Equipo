@@ -16,335 +16,358 @@
   </header>
 
   @if (hayDatosNivel) {
-  <div
-    class="mapa-superficie"
-    [class.mapa-superficie--navegacion]="navegacionActiva"
-    [class.mapa-superficie--plano]="esMapaVisualNivel"
-  >
-    @if (navegacionActiva) {
-    <aside
-      class="panel-navegacion"
-      aria-live="polite"
+    <div
+      class="mapa-superficie"
+      [class.mapa-superficie--navegacion]="navegacionActiva"
+      [class.mapa-superficie--plano]="esMapaVisualNivel"
     >
-      <span
-        class="panel-navegacion__icono"
-        [style.transform]="'rotate(' + anguloDireccionActual + 'deg)'"
-        aria-hidden="true"
-      >
-        ↑
-      </span>
+      @if (navegacionActiva) {
+        <aside
+          class="panel-navegacion"
+          aria-live="polite"
+        >
+          <span
+            class="panel-navegacion__icono"
+            [style.transform]="'rotate(' + anguloDireccionActual + 'deg)'"
+            aria-hidden="true"
+          >
+            ↑
+          </span>
 
-      <div class="panel-navegacion__detalle">
-        <p>
-          {{ textoNavegacion }} ·
-          {{ textoPaso }}
-          {{ pasoActualRuta }} / {{ totalNodosRuta }}
-        </p>
+          <div class="panel-navegacion__detalle">
+            <p>
+              {{ textoNavegacion }} ·
+              {{ textoPaso }}
+              {{ pasoActualRuta }} / {{ totalNodosRuta }}
+            </p>
 
-        <h3>
-          {{ instruccionNavegacion }}
-        </h3>
-      </div>
+            <h3>
+              {{ instruccionNavegacion }}
+            </h3>
+          </div>
 
-      <strong class="panel-navegacion__porcentaje">
-        {{ progresoNavegacion }}%
-      </strong>
+          <strong class="panel-navegacion__porcentaje">
+            {{ progresoNavegacion }}%
+          </strong>
 
-      <span
-        class="panel-navegacion__progreso"
-        aria-hidden="true"
-      >
-        <i [style.width.%]="progresoNavegacion"></i>
-      </span>
-    </aside>
-    }
-
-    <svg
-      [attr.viewBox]="viewBoxMapa"
-      role="img"
-      [attr.aria-label]="textoAriaMapa"
-    >
-      @if (imagenMapa; as mapaSrc) {
-        <image
-          [attr.href]="mapaSrc"
-          [attr.x]="imagenMapaX"
-          [attr.y]="imagenMapaY"
-          [attr.width]="anchoImagenMapa"
-          [attr.height]="altoImagenMapa"
-          preserveAspectRatio="xMidYMid meet"
-          aria-hidden="true"
-        />
+          <span
+            class="panel-navegacion__progreso"
+            aria-hidden="true"
+          >
+            <i [style.width.%]="progresoNavegacion"></i>
+          </span>
+        </aside>
       }
 
-      @for (zona of zonasClicables; track zona.nodoId) {
-        <rect
-          class="mapa-zona-clicable"
-          [attr.x]="zona.x"
-          [attr.y]="zona.y"
-          [attr.width]="zona.ancho"
-          [attr.height]="zona.alto"
-          fill="transparent"
-          role="button"
-          tabindex="0"
-          [attr.aria-label]="nombreZona(zona.nodoId)"
-          (click)="seleccionarZona(zona.nodoId)"
-          (keyup.enter)="seleccionarZona(zona.nodoId)"
-          (keyup.space)="seleccionarZona(zona.nodoId)"
-        >
-          <title>{{ nombreZona(zona.nodoId) }}</title>
-        </rect>
-      }
-      <defs>
-        <filter
-          id="brilloRuta"
-          x="-50%"
-          y="-50%"
-          width="200%"
-          height="200%"
-        >
-          <feGaussianBlur
-            stdDeviation="7"
-            result="desenfoque"
+      <svg
+        [attr.viewBox]="viewBoxMapa"
+        role="img"
+        [attr.aria-label]="textoAriaMapa"
+      >
+        @if (imagenMapa; as mapaSrc) {
+          <image
+            [attr.href]="mapaSrc"
+            [attr.x]="imagenMapaX"
+            [attr.y]="imagenMapaY"
+            [attr.width]="anchoImagenMapa"
+            [attr.height]="altoImagenMapa"
+            preserveAspectRatio="xMidYMid meet"
+            aria-hidden="true"
           />
+        }
 
-          <feMerge>
-            <feMergeNode in="desenfoque" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
+        @for (zona of zonasClicables; track zona.nodoId) {
+          <rect
+            class="mapa-zona-clicable"
+            [attr.x]="zona.x"
+            [attr.y]="zona.y"
+            [attr.width]="zona.ancho"
+            [attr.height]="zona.alto"
+            fill="transparent"
+            role="button"
+            tabindex="0"
+            [attr.aria-label]="nombreZona(zona.nodoId)"
+            (click)="seleccionarZona(zona.nodoId)"
+            (keyup.enter)="seleccionarZona(zona.nodoId)"
+            (keyup.space)="seleccionarZona(zona.nodoId)"
+          >
+            <title>{{ nombreZona(zona.nodoId) }}</title>
+          </rect>
+        }
 
-        <filter
-          id="brilloActual"
-          x="-75%"
-          y="-75%"
-          width="250%"
-          height="250%"
-        >
-          <feGaussianBlur
-            stdDeviation="10"
-            result="desenfoqueActual"
-          />
-
-          <feMerge>
-            <feMergeNode
-              in="desenfoqueActual"
+        <defs>
+          <filter
+            id="brilloRuta"
+            x="-50%"
+            y="-50%"
+            width="200%"
+            height="200%"
+          >
+            <feGaussianBlur
+              stdDeviation="7"
+              result="desenfoque"
             />
 
-            <feMergeNode
-              in="SourceGraphic"
+            <feMerge>
+              <feMergeNode in="desenfoque" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+
+          <filter
+            id="brilloActual"
+            x="-75%"
+            y="-75%"
+            width="250%"
+            height="250%"
+          >
+            <feGaussianBlur
+              stdDeviation="10"
+              result="desenfoqueActual"
             />
-          </feMerge>
-        </filter>
 
-      </defs>
+            <feMerge>
+              <feMergeNode in="desenfoqueActual" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
 
-      <g class="conexiones">
+        <g class="conexiones">
+          @for (
+            conexion of conexionesVisuales;
+            track identificarConexion($index, conexion)
+          ) {
+            <path
+              [attr.d]="conexion.trazado"
+              fill="none"
+              [attr.visibility]="esMapaVisualNivel && !conexion.perteneceRuta ? 'hidden' : null"
+              [ngClass]="{
+                'conexion-ruta-recorrida':
+                  conexion.recorridoCompletado &&
+                  conexion.habilitada,
+                'conexion-tramo-actual':
+                  conexion.esTramoActual &&
+                  conexion.habilitada,
+                'conexion-ruta-pendiente':
+                  conexion.recorridoPendiente &&
+                  conexion.habilitada,
+                'conexion-base':
+                  !conexion.perteneceRuta &&
+                  conexion.habilitada,
+                'conexion-accesible':
+                  conexion.accesible &&
+                  conexion.habilitada,
+                'conexion-cerrada':
+                  !conexion.habilitada
+              }"
+            />
+          }
+        </g>
+
         @for (
-          conexion of conexionesVisuales;
-          track identificarConexion($index, conexion)
+          nodoVisual of nodosVisuales;
+          track identificarNodo($index, nodoVisual)
         ) {
-        <path
-          [attr.d]="conexion.trazado"
-          fill="none"
-          [attr.visibility]="esMapaVisualNivel && !conexion.perteneceRuta ? 'hidden' : null"
-          [ngClass]="{
-            'conexion-ruta-recorrida':
-              conexion.recorridoCompletado &&
-              conexion.habilitada,
-            'conexion-tramo-actual':
-              conexion.esTramoActual &&
-              conexion.habilitada,
-            'conexion-ruta-pendiente':
-              conexion.recorridoPendiente &&
-              conexion.habilitada,
-            'conexion-base':
-              !conexion.perteneceRuta &&
-              conexion.habilitada,
-            'conexion-accesible':
-              conexion.accesible &&
-              conexion.habilitada,
-            'conexion-cerrada':
-              !conexion.habilitada
-          }"
-        />
-        }
-      </g>
-
-      @for (
-        nodoVisual of nodosVisuales;
-        track identificarNodo($index, nodoVisual)
-      ) {
-      <g
-        class="nodo"
-        [attr.transform]="
-          'translate(' +
-          nodoVisual.xVisual +
-          ' ' +
-          nodoVisual.yVisual +
-          ')'
-        "
-      >
-        <circle
-          [attr.r]="esMapaVisualNivel ? 8 : 18"
-          [ngClass]="{
-            'nodo-base':
-              !nodoVisual.perteneceRuta,
-            'nodo-ruta-recorrida':
-              nodoVisual.recorridoCompletado,
-            'nodo-ruta-pendiente':
-              nodoVisual.recorridoPendiente,
-            'nodo-origen':
-              nodoVisual.esOrigen,
-            'nodo-destino':
-              nodoVisual.esDestino,
-            'nodo-actual':
-              nodoVisual.esActual,
-            'nodo-destino-actual':
-              nodoVisual.esDestino &&
-              nodoVisual.esActual
-          }"
-        />
-
-        @if (
-            nodoVisual.esOrigen ||
-            nodoVisual.esDestino ||
-            nodoVisual.esActual
-        ) {
-        <circle
-          r="28"
-          [ngClass]="{
-            'nodo-pulso':
-              !nodoVisual.esActual,
-            'nodo-pulso-actual':
-              nodoVisual.esActual &&
-              !nodoVisual.esDestino,
-            'nodo-pulso-destino':
-              nodoVisual.esActual &&
-              nodoVisual.esDestino
-          }"
-        />
-        }
-
-        <title>{{ nodoVisual.nodo.nombre }}</title>
-        @if (!esMapaVisualNivel) {
-        <text
-          [attr.x]="nodoVisual.etiquetaX"
-          [attr.y]="nodoVisual.etiquetaY"
-          [attr.text-anchor]="
-            nodoVisual.etiquetaAncla
-          "
-          class="nodo-nombre"
-          [ngClass]="{
-            'nodo-nombre-ruta':
-              nodoVisual.perteneceRuta,
-            'nodo-nombre-actual':
-              nodoVisual.esActual
-          }"
-        >
-          {{ nodoVisual.textoEtiqueta }}
-        </text>
-        }
-
-        @if (nodoVisual.esActual) {
-          <text
-            x="0"
-            y="5"
-            text-anchor="middle"
-            class="nodo-marcador-actual"
-            aria-hidden="true"
-          >
-            ●
-          </text>
-        }
-      </g>
-      }
-
-      @if (posicionCursor; as cursor) {
-        @if (mostrarMarcadorDireccion) {
           <g
-            class="marcador-navegacion-posicion"
-            style="transition: none; pointer-events: none;"
-            [style.transform]="
+            class="nodo"
+            [attr.transform]="
               'translate(' +
-              cursor.x +
-              'px, ' +
-              cursor.y +
-              'px)'
+              nodoVisual.xVisual +
+              ' ' +
+              nodoVisual.yVisual +
+              ')'
             "
-            aria-hidden="true"
           >
-            <g
-              class="marcador-navegacion"
-              style="animation: none; transform-origin: 0 0;"
-              [style.transform]="
-                'rotate(' +
-                anguloDireccionActual +
-                'deg)'
-              "
-            >
-              <path
-                class="marcador-navegacion__direccion"
-                d="M 0 -49 L 11 -34 L -11 -34 Z"
-                fill="#17345c"
-                stroke="#ffffff"
-                stroke-width="2"
-                stroke-linejoin="round"
-              />
+            <circle
+              [attr.r]="esMapaVisualNivel ? 8 : 18"
+              [ngClass]="{
+                'nodo-base':
+                  !nodoVisual.perteneceRuta,
+                'nodo-ruta-recorrida':
+                  nodoVisual.recorridoCompletado,
+                'nodo-ruta-pendiente':
+                  nodoVisual.recorridoPendiente,
+                'nodo-origen':
+                  nodoVisual.esOrigen,
+                'nodo-destino':
+                  nodoVisual.esDestino,
+                'nodo-actual':
+                  nodoVisual.esActual,
+                'nodo-destino-actual':
+                  nodoVisual.esDestino &&
+                  nodoVisual.esActual
+              }"
+            />
 
-              <circle r="31" />
-
-              <path
-                class="marcador-navegacion__hippocampus"
-                d="M 0 -25 C 10 -27 17 -20 15 -12 C 14 -6 8 -3 7 2 C 6 7 13 10 12 17 C 11 24 2 27 -5 23 C -11 19 -9 12 -4 10 C 1 8 4 13 1 16 C -1 18 -4 17 -3 15 C -7 18 -3 22 2 21 C 8 20 9 14 5 10 C 1 6 -1 1 0 -4 C 1 -9 7 -12 8 -17 C 9 -21 5 -23 1 -21 C -2 -20 -3 -17 -5 -14 L -10 -16 L -7 -22 C -5 -25 -2 -26 0 -25 Z"
-              />
-
-              <path
-                class="marcador-navegacion__hocico"
-                d="M 10 -21 L 19 -24 L 13 -16 Z"
-              />
-
+            @if (
+              nodoVisual.esOrigen ||
+              nodoVisual.esDestino ||
+              nodoVisual.esActual
+            ) {
               <circle
-                class="marcador-navegacion__ojo"
-                cx="6"
-                cy="-19"
-                r="1.5"
+                r="28"
+                [ngClass]="{
+                  'nodo-pulso':
+                    !nodoVisual.esActual,
+                  'nodo-pulso-actual':
+                    nodoVisual.esActual &&
+                    !nodoVisual.esDestino,
+                  'nodo-pulso-destino':
+                    nodoVisual.esActual &&
+                    nodoVisual.esDestino
+                }"
               />
-            </g>
+            }
+
+            <title>{{ nodoVisual.nodo.nombre }}</title>
+
+            @if (!esMapaVisualNivel) {
+              <text
+                [attr.x]="nodoVisual.etiquetaX"
+                [attr.y]="nodoVisual.etiquetaY"
+                [attr.text-anchor]="nodoVisual.etiquetaAncla"
+                class="nodo-nombre"
+                [ngClass]="{
+                  'nodo-nombre-ruta':
+                    nodoVisual.perteneceRuta,
+                  'nodo-nombre-actual':
+                    nodoVisual.esActual
+                }"
+              >
+                {{ nodoVisual.textoEtiqueta }}
+              </text>
+            }
+
+            @if (nodoVisual.esActual) {
+              <text
+                x="0"
+                y="5"
+                text-anchor="middle"
+                class="nodo-marcador-actual"
+                aria-hidden="true"
+              >
+                ●
+              </text>
+            }
           </g>
         }
-      }
-    </svg>
 
-    <div
-      class="mapa-controles"
-      role="group"
-      [attr.aria-label]="textoAriaMapa"
-    >
-      <button
-        type="button"
-        class="mapa-controles__centrar"
-        (click)="centrarCursor()"
-        [disabled]="!mostrarMarcadorDireccion"
-        [attr.aria-pressed]="seguirCursor && zoom > 1"
-        [attr.title]="textoUbicacionActual"
-      >
-        <span aria-hidden="true">◎</span>
-        {{ textoUbicacionActual }}
-      </button>
+        @if (gpsVisual; as gps) {
+          <g
+            [attr.transform]="'translate(' + gps.x + ' ' + gps.y + ')'"
+            style="pointer-events: none;"
+          >
+            <circle
+              r="14"
+              fill="#1688ff"
+              stroke="#ffffff"
+              stroke-width="3"
+            />
 
-      <button
-        type="button"
-        class="mapa-controles__plano"
-        (click)="ajustarPlano()"
-        [attr.aria-pressed]="zoom === 1"
+            <text
+              x="19"
+              y="5"
+              fill="#ffffff"
+              stroke="#17345c"
+              stroke-width="0.6"
+              font-size="16"
+            >
+              GPS
+            </text>
+
+            <title>
+              GPS ±{{ posicionGpsPlano?.incertidumbreMetros }} m
+            </title>
+          </g>
+        }
+
+        @if (posicionCursor; as cursor) {
+          @if (mostrarMarcadorDireccion) {
+            <g
+              class="marcador-navegacion-posicion"
+              style="transition: none; pointer-events: none;"
+              [style.transform]="
+                'translate(' +
+                cursor.x +
+                'px, ' +
+                cursor.y +
+                'px)'
+              "
+              aria-hidden="true"
+            >
+              <g
+                class="marcador-navegacion"
+                style="animation: none; transform-origin: 0 0;"
+                [style.transform]="
+                  'rotate(' +
+                  anguloDireccionActual +
+                  'deg)'
+                "
+              >
+                <path
+                  class="marcador-navegacion__direccion"
+                  d="M 0 -49 L 11 -34 L -11 -34 Z"
+                  fill="#17345c"
+                  stroke="#ffffff"
+                  stroke-width="2"
+                  stroke-linejoin="round"
+                />
+
+                <circle r="31" />
+
+                <path
+                  class="marcador-navegacion__hippocampus"
+                  d="M 0 -25 C 10 -27 17 -20 15 -12 C 14 -6 8 -3 7 2 C 6 7 13 10 12 17 C 11 24 2 27 -5 23 C -11 19 -9 12 -4 10 C 1 8 4 13 1 16 C -1 18 -4 17 -3 15 C -7 18 -3 22 2 21 C 8 20 9 14 5 10 C 1 6 -1 1 0 -4 C 1 -9 7 -12 8 -17 C 9 -21 5 -23 1 -21 C -2 -20 -3 -17 -5 -14 L -10 -16 L -7 -22 C -5 -25 -2 -26 0 -25 Z"
+                />
+
+                <path
+                  class="marcador-navegacion__hocico"
+                  d="M 10 -21 L 19 -24 L 13 -16 Z"
+                />
+
+                <circle
+                  class="marcador-navegacion__ojo"
+                  cx="6"
+                  cy="-19"
+                  r="1.5"
+                />
+              </g>
+            </g>
+          }
+        }
+      </svg>
+
+      <div
+        class="mapa-controles"
+        role="group"
         [attr.aria-label]="textoAriaMapa"
-        [attr.title]="textoAriaMapa"
       >
-        <span aria-hidden="true">⤢</span>
-        {{ textoNivel }} {{ nivel }}
-      </button>
+        <button
+          type="button"
+          class="mapa-controles__centrar"
+          (click)="centrarCursor()"
+          [disabled]="!mostrarMarcadorDireccion"
+          [attr.aria-pressed]="seguirCursor && zoom > 1"
+          [attr.title]="textoUbicacionActual"
+        >
+          <span aria-hidden="true">◎</span>
+          {{ textoUbicacionActual }}
+        </button>
+
+        <button
+          type="button"
+          class="mapa-controles__plano"
+          (click)="ajustarPlano()"
+          [attr.aria-pressed]="zoom === 1"
+          [attr.aria-label]="textoAriaMapa"
+          [attr.title]="textoAriaMapa"
+        >
+          <span aria-hidden="true">⤢</span>
+          {{ textoNivel }} {{ nivel }}
+        </button>
+      </div>
     </div>
-  </div>
   } @else {
     <div class="mapa-vacio">
       <p>

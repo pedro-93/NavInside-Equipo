@@ -36,6 +36,10 @@ import type {
   EstadoSeguimientoRuta
 } from '../../services/seguimiento-ruta.service';
 
+import type {
+  PosicionEnPlano
+} from '../../services/georreferencia.service';
+
 interface NodoVisual {
   nodo: Nodo;
   textoEtiqueta: string;
@@ -116,6 +120,12 @@ export class MapaRutaComponent implements OnChanges, OnDestroy {
 
   @Input()
   seguimientoFisico: EstadoSeguimientoRuta | null = null;
+
+  @Input()
+  posicionGpsPlano: PosicionEnPlano | null = null;
+
+  @Input()
+  textoInstruccionFisica = '';
 
   @Input()
   textoLlegadaEstimada = 'Llegada estimada a';
@@ -667,7 +677,54 @@ export class MapaRutaComponent implements OnChanges, OnDestroy {
     );
   }
 
+  get gpsVisual(): PuntoMapa | null {
+    const p = this.posicionGpsPlano;
+
+    if (!p || p.nivel !== this.nivel) {
+      return null;
+    }
+
+    if (this.esMapaVisualNivel) {
+      return { x: p.x, y: p.y };
+    }
+
+    const nodos = this.nodosVisuales;
+    const a = nodos[0];
+
+    if (!a) {
+      return null;
+    }
+
+    const b = nodos.find(
+      n =>
+        n.nodo.x !== a.nodo.x ||
+        n.nodo.y !== a.nodo.y
+    );
+
+    if (!b) {
+      return null;
+    }
+
+    const escala = b.nodo.x !== a.nodo.x
+      ? (b.xVisual - a.xVisual) /
+        (b.nodo.x - a.nodo.x)
+      : (b.yVisual - a.yVisual) /
+        (b.nodo.y - a.nodo.y);
+
+    return {
+      x: a.xVisual + (p.x - a.nodo.x) * escala,
+      y: a.yVisual + (p.y - a.nodo.y) * escala
+    };
+  }
+
   get instruccionNavegacion(): string {
+    if (
+      this.seguimientoFisicoActivo &&
+      this.textoInstruccionFisica
+    ) {
+      return this.textoInstruccionFisica;
+    }
+
     if (this.seguimientoFisicoActivo &&
         this.seguimientoFisico!.fase === 'confirmar-nivel') {
       const destino = this.ruta.find(
@@ -776,9 +833,16 @@ export class MapaRutaComponent implements OnChanges, OnDestroy {
   }
 
   get anguloDireccionActual(): number {
-    return this.cursorAnimado
+    const angulo = this.cursorAnimado
       ? this.anguloCursorAnimado
       : this.obtenerAnguloSalida();
+
+    return angulo + (
+      this.seguimientoFisicoActivo &&
+      this.seguimientoFisico?.direccion === 'retrocediendo'
+        ? 180
+        : 0
+    );
   }
 
   private obtenerPuntosIntermedios(
@@ -975,7 +1039,8 @@ export class MapaRutaComponent implements OnChanges, OnDestroy {
       return;
     }
 
-    // Suaviza solo el avance ya detectado; no agrega metros por tiempo.
+    // Suaviza solo el avance ya detectado;
+    // no agrega metros por tiempo.
     const instanteInicial = performance.now();
 
     const actualizar = (ahora: number): void => {
@@ -995,7 +1060,8 @@ export class MapaRutaComponent implements OnChanges, OnDestroy {
   }
 
   private animarCursor(puntos: PuntoMapa[]): void {
-    // Conserva los corredores exactos del plano; elimina solo puntos repetidos.
+    // Conserva los corredores exactos del plano;
+    // elimina solo puntos repetidos.
     const camino = puntos.filter(
       (punto, indice) =>
         indice === 0 ||
@@ -1049,6 +1115,7 @@ export class MapaRutaComponent implements OnChanges, OnDestroy {
     let ultimoFrame = inicioAnimacion;
 
     this.cursorAnimado = { ...camino[0] };
+
     this.anguloCursorAnimado = this.anguloEntrePuntos(
       camino[0],
       camino[1]
@@ -1280,7 +1347,8 @@ export class MapaRutaComponent implements OnChanges, OnDestroy {
       }
     };
 
-    const posicionPersonalizada = posicionesNivelUno[nodo.id];
+    const posicionPersonalizada =
+      posicionesNivelUno[nodo.id];
 
     if (posicionPersonalizada) {
       return posicionPersonalizada;

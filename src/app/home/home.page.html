@@ -303,6 +303,82 @@
         </button>
       </div>
 
+      <section aria-labelledby="apoyo-ubicacion-titulo">
+        <h3 id="apoyo-ubicacion-titulo">
+          {{ texto('Ubicación asistida · Wi-Fi y GPS', 'Assisted location · Wi-Fi and GPS', 'Localização assistida · Wi-Fi e GPS') }}
+        </h3>
+        <p>
+          {{ texto(
+            'Puedes confirmar un sector manualmente o activar la corrección automática durante el seguimiento. El GPS sobre el plano requiere referencias precisas de ese nivel. Los cambios de piso se confirman por separado.',
+            'You can confirm an area manually or enable automatic correction during tracking. GPS on the map requires accurate references on that floor. Floor changes are confirmed separately.',
+            'Você pode confirmar um setor manualmente ou ativar a correção automática durante o acompanhamento. GPS no mapa exige referências precisas desse andar. Mudanças de andar são confirmadas separadamente.'
+          ) }}
+        </p>
+        <button type="button" class="comando-voz-ruta__boton"
+          (click)="buscarReferenciasWifi()"
+          [disabled]="!wifiDisponible || estadoApoyo.buscandoWifi || seguimientoIniciando">
+          {{ estadoApoyo.buscandoWifi ? texto('Buscando redes…', 'Scanning networks…', 'Buscando redes…') : texto('Comparar señales Wi-Fi', 'Compare Wi-Fi signals', 'Comparar sinais Wi-Fi') }}
+        </button>
+        @if (!wifiDisponible) {
+          <p>{{ texto('La lectura de redes requiere la versión Android con el módulo Wi-Fi instalado.', 'Network scanning requires the Android version with the Wi-Fi module installed.', 'A leitura de redes exige a versão Android com o módulo Wi-Fi instalado.') }}</p>
+        }
+        @if (estadoApoyo.errorWifi) {
+          <p role="status">{{ texto('No se obtuvo una lectura Wi-Fi nueva. Comprueba Wi-Fi, ubicación y permiso de ubicación precisa; espera al menos 35 segundos entre intentos.', 'No fresh Wi-Fi reading was obtained. Check Wi-Fi, location and precise-location permission; wait at least 35 seconds between attempts.', 'Não foi obtida uma leitura Wi-Fi nova. Verifique Wi-Fi, localização e permissão de localização precisa; aguarde pelo menos 35 segundos entre tentativas.') }}</p>
+        }
+        @if (estadoApoyo.lecturas.length > 0) {
+          <ul>
+            @for (red of estadoApoyo.lecturas.slice(0, 10); track red.bssid) {
+              <li>{{ red.ssid || texto('Red oculta', 'Hidden network', 'Rede oculta') }}: {{ red.rssi }} dBm</li>
+            }
+          </ul>
+          @if (estadoApoyo.candidatos.length === 0) {
+            <p>{{ texto('No hay coincidencias suficientes con el levantamiento.', 'Insufficient matches with the survey.', 'Não há correspondências suficientes com o levantamento.') }}</p>
+          }
+        }
+        @for (candidato of estadoApoyo.candidatos; track candidato.huella.id) {
+          <p>{{ texto('Sector sugerido:', 'Suggested area:', 'Setor sugerido:') }} {{ candidato.huella.nombre }} · {{ candidato.coincidencias }} {{ texto('señales coincidentes. Estimación preliminar.', 'matching signals. Preliminary estimate.', 'sinais correspondentes. Estimativa preliminar.') }}</p>
+          @for (id of candidato.huella.nodoIds; track id) {
+            <button type="button" (click)="confirmarPoiApoyo(id, 'wifi')" [disabled]="seguimientoIniciando">
+              {{ texto('Confirmo que estoy en', 'I confirm I am at', 'Confirmo que estou em') }} {{ nombrePuntoApoyo(id) }}
+            </button>
+          }
+        }
+        @if (poiSugeridoGps; as poiGps) {
+          <button type="button" (click)="confirmarPoiApoyo(poiGps.id, 'gps')" [disabled]="seguimientoIniciando">
+            GPS · {{ texto('Confirmo que estoy en', 'I confirm I am at', 'Confirmo que estou em') }} {{ nombreNodo(poiGps) }}
+          </button>
+        }
+        @if (seguimientoFisicoSeleccionado && origen) {
+          <p>{{ texto('Solo estando físicamente en el origen del resort: confirma ese lugar para guardar su referencia GPS en este teléfono.', 'Only when physically at the resort origin: confirm that location to save its GPS reference on this phone.', 'Somente estando fisicamente na origem do resort: confirme esse local para salvar sua referência GPS neste telefone.') }}</p>
+          <button type="button" (click)="guardarReferenciaGpsOrigen()" [disabled]="seguimientoIniciando">
+            {{ texto('Estoy en el origen: guardar GPS', 'I am at the origin: save GPS', 'Estou na origem: salvar GPS') }}
+          </button>
+        }
+        @if (seguimientoFisicoSeleccionado && origen) {
+          <p>{{ texto('Captura referencias solo estando físicamente en el POI elegido del resort. No las guardes desde tu casa. Para GPS sobre el plano se requieren al menos tres puntos separados, no alineados y con precisión de 3 m o mejor, por nivel.',
+            'Capture references only when physically at the selected resort POI. Do not save them from home. GPS on the map requires at least three separated, non-collinear points with accuracy of 3 m or better per floor.',
+            'Capture referências somente estando fisicamente no POI escolhido do resort. Não salve de casa. GPS no mapa exige pelo menos três pontos separados, não alinhados e com precisão de 3 m ou melhor por andar.') }}</p>
+          <button type="button" (click)="guardarHuellaWifiOrigen()" [disabled]="seguimientoIniciando || estadoApoyo.buscandoWifi">
+            {{ texto('Estoy en el origen: guardar huella Wi-Fi', 'I am at the origin: save Wi-Fi fingerprint', 'Estou na origem: salvar impressão Wi-Fi') }}
+          </button>
+        }
+        @if (mensajeApoyo) {
+          <p role="status">{{ mensajeApoyo }}</p>
+        }
+        <details>
+          <summary>{{ texto('Ver mediciones Wi-Fi del levantamiento', 'View survey Wi-Fi measurements', 'Ver medições Wi-Fi do levantamento') }}</summary>
+          @for (huella of huellasWifi; track huella.id) {
+            <h4>{{ huella.nombre }} · {{ huella.hora }}</h4>
+            <p>{{ huella.observacion }}</p>
+            <ul>
+              @for (lectura of huella.lecturas; track $index) {
+                <li>{{ lectura.ssid }}: {{ lectura.rssi }} dBm · {{ texto('Canal', 'Channel', 'Canal') }} {{ lectura.canal }}</li>
+              }
+            </ul>
+          }
+        </details>
+      </section>
+
       @if (mensajeUbicacion) {
         <p class="resultado-ruta" role="status">
           {{ mensajeUbicacion }}
@@ -415,9 +491,9 @@
                 class="guia-paso-a-paso__demo"
               >
                 {{ texto(
-                  'El valor inicial de 0,65 m es orientativo. Para calibrarlo, divide una distancia conocida por la cantidad de pasos que das al recorrerla.',
-                  'The initial value of 0.65 m is an estimate. To calibrate it, divide a known distance by the number of steps you take along it.',
-                  'O valor inicial de 0,65 m é uma estimativa. Para calibrar, divida uma distância conhecida pelo número de passos que você dá ao percorrê-la.'
+                  'El valor inicial configurado es de 0,200 m por paso, según la medición con láser del levantamiento. Puedes ajustarlo antes de iniciar el seguimiento.',
+                  'The initial setting is 0.200 m per step, based on the laser measurement recorded during the survey. You can adjust it before starting tracking.',
+                  'O valor inicial configurado é de 0,200 m por passo, conforme a medição com laser do levantamento. Você pode ajustá-lo antes de iniciar o acompanhamento.'
                 ) }}
               </p>
               <p>
@@ -454,6 +530,42 @@
                 {{ texto('Pasos estimados', 'Estimated steps', 'Passos estimados') }}:
                 {{ seguimientoFisico?.pasosEstimados ?? 0 }}
               </p>
+
+              <p class="guia-paso-a-paso__estado" role="status">
+                {{ textoOrientacionSeguimiento }}
+              </p>
+              <p class="guia-paso-a-paso__demo">
+                {{ texto(
+                  'Para estimar avance, regreso y posibles desvíos, apunta el teléfono hacia el siguiente pasillo y calibra la dirección. Conserva esa posición respecto a tu cuerpo al caminar. La brújula puede fallar cerca de metales; usa QR para confirmar tu ubicación. Calibra de nuevo al cambiar de piso.',
+                  'To estimate forward motion, returning and possible deviations, point your phone along the next corridor and calibrate its heading. Keep that position relative to your body while walking. Metal can affect the compass; use QR to confirm your location. Calibrate again after changing floors.',
+                  'Para estimar avanço, retorno e possíveis desvios, aponte o telefone para o próximo corredor e calibre a direção. Mantenha essa posição em relação ao corpo ao caminhar. Metais podem afetar a bússola; use QR para confirmar sua localização. Calibre novamente ao mudar de andar.'
+                ) }}
+              </p>
+              <div class="guia-paso-a-paso__acciones">
+                <button
+                  type="button"
+                  (click)="calibrarOrientacionSeguimiento()"
+                  [disabled]="seguimientoIniciando || seguimientoFisico?.fase !== 'siguiendo'"
+                >
+                  {{ texto('Calibrar dirección', 'Calibrate heading', 'Calibrar direção') }}
+                </button>
+                @if (seguimientoFisico?.orientacionCalibrada) {
+                  <button type="button" (click)="desactivarOrientacionSeguimiento()">
+                    {{ texto('Usar solo pasos hacia delante', 'Use forward steps only', 'Usar apenas passos para frente') }}
+                  </button>
+                }
+              </div>
+
+              <div class="guia-paso-a-paso__acciones">
+                <button type="button" (click)="alternarNavegacionAutomatica()"
+                  [disabled]="seguimientoIniciando || seguimientoFisico?.fase !== 'siguiendo'"
+                  [attr.aria-pressed]="estadoAutomatico.activa">
+                  {{ estadoAutomatico.activa ? texto('Desactivar corrección automática', 'Disable automatic correction', 'Desativar correção automática') : texto('Activar Wi-Fi/GPS automático', 'Enable automatic Wi-Fi/GPS', 'Ativar Wi-Fi/GPS automático') }}
+                </button>
+              </div>
+              @if (estadoAutomatico.activa) {
+                <p role="status">{{ textoAutomatico }}</p>
+              }
 
               @if (seguimientoIniciando) {
                 <p role="status">
@@ -651,6 +763,8 @@
         [origenId]="origenId"
         [destinoId]="destinoId"
         [nodoActualId]="nodoActualId"
+        [posicionGpsPlano]="estadoAutomatico.posicion"
+        [textoInstruccionFisica]="seguimientoFisicoSeleccionado ? instruccionSeguimientoFisico : ''"
         [seguimientoFisico]="seguimientoFisicoSeleccionado ? seguimientoFisico : null"
         [textoLlegadaEstimada]="textoLlegadaEstimada"
         [textoConfirmarNivel]="textoConfirmarNivel"
