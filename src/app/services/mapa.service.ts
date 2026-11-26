@@ -1,3 +1,5 @@
+import { incorporarRutasAccesiblesNivel3 } from '../data/rutas-accesibles-nivel-3.data';
+import { integrarMedicionesLevantadas } from '../data/levantamiento-recorridos.data';
 import { Injectable } from '@angular/core';
 import {
   createClient
@@ -11,6 +13,10 @@ import {
   LUGARES_HIPPOCAMPUS_PRELIMINARES,
   MAPA_ACTIVO
 } from '../data/mapa-simulado.data';
+import {
+  CONEXIONES_COMPLEMENTARIAS,
+  NODOS_COMPLEMENTARIOS
+} from '../data/ampliacion-hippocampus.data';
 import {
   Conexion,
   LugarPlano,
@@ -28,16 +34,28 @@ interface FilaNodoSupabase {
   sector: string | null;
   accesible: boolean | null;
   restringido: boolean;
+  activo: boolean;
 }
 
 interface FilaConexionSupabase {
   origen_id: string;
   destino_id: string;
-  distancia: number | string;
+  distancia: number | string | null;
   tipo: string;
   accesible: boolean;
   restringida: boolean;
   habilitada: boolean;
+}
+
+export type OrigenDatosMapa =
+  | 'local'
+  | 'supabase';
+
+export interface EstadoCargaMapa {
+  origenActivo: OrigenDatosMapa;
+  ultimaComprobacion: string | null;
+  ultimaCargaExitosa: string | null;
+  ultimoIntentoExitoso: boolean | null;
 }
 
 @Injectable({
@@ -54,12 +72,30 @@ export class MapaService {
     new Set<string>();
 
   private mapaActivo: MapaNavegacion =
-    this.crearCopiaMapa(
+    incorporarRutasAccesiblesNivel3(this.crearCopiaMapa(
       MAPA_ACTIVO
-    );
+    ));
+
+  private origenActivo:
+    OrigenDatosMapa = 'local';
+
+  private ultimaComprobacion:
+    string | null = null;
+
+  private ultimaCargaExitosa:
+    string | null = null;
+
+  private ultimoIntentoExitoso:
+    boolean | null = null;
 
   async cargarMapaDesdeSupabase():
     Promise<boolean> {
+    const fechaIntento =
+      new Date().toISOString();
+
+    this.ultimaComprobacion =
+      fechaIntento;
+
     try {
       const {
         data: mapa,
@@ -79,7 +115,7 @@ export class MapaService {
           errorMapa
         );
 
-        return false;
+        return this.registrarFalloCarga();
       }
 
       const {
@@ -88,15 +124,11 @@ export class MapaService {
       } = await this.supabase
         .from('nodos')
         .select(
-          'id, nombre, x, y, tipo, nivel, sector, accesible, restringido'
+          'id, nombre, x, y, tipo, nivel, sector, accesible, restringido, activo'
         )
         .eq(
           'mapa_id',
           mapa.id
-        )
-        .eq(
-          'activo',
-          true
         )
         .order('id');
 
@@ -118,7 +150,9 @@ export class MapaService {
         errorNodos ||
         errorConexiones ||
         !nodos ||
-        !conexiones
+        !conexiones ||
+        nodos.length === 0 ||
+        conexiones.length === 0
       ) {
         console.warn(
           'No se pudieron cargar nodos o conexiones.',
@@ -126,27 +160,50 @@ export class MapaService {
             errorConexiones
         );
 
-        return false;
+        return this.registrarFalloCarga();
       }
 
-      this.mapaActivo = {
+      const filasNodo = nodos as FilaNodoSupabase[];
+      const nodosActivos = filasNodo.filter(nodo => nodo.activo === true);
+      if (nodosActivos.length === 0) {
+        return this.registrarFalloCarga();
+      }
+
+      const idsRemotos = new Set(filasNodo.map(nodo => this.normalizarIdRemoto(nodo.id)));
+      const nodosCombinados = [
+        ...nodosActivos.map(nodo => this.convertirNodo(nodo)),
+        ...NODOS_COMPLEMENTARIOS.filter(nodo => !idsRemotos.has(nodo.id))
+      ];
+      const idsActivos = new Set(nodosCombinados.map(nodo => nodo.id));
+      const conexionesRemotas = conexiones.map(conexion =>
+        this.convertirConexion(conexion as FilaConexionSupabase)
+      );
+      const clavesRemotas = new Set(conexionesRemotas.map(conexion =>
+        this.crearClaveConexion(conexion.origen, conexion.destino)
+      ));
+      const conexionesCombinadas = [
+        ...conexionesRemotas,
+        ...CONEXIONES_COMPLEMENTARIAS.filter(conexion =>
+          !clavesRemotas.has(this.crearClaveConexion(conexion.origen, conexion.destino))
+        )
+      ].filter(conexion => idsActivos.has(conexion.origen) && idsActivos.has(conexion.destino));
+
+      this.mapaActivo = incorporarRutasAccesiblesNivel3({
         ...this.crearCopiaMapa(
           MAPA_ACTIVO
         ),
-        nodos: nodos.map(
-          nodo =>
-            this.convertirNodo(
-              nodo as FilaNodoSupabase
-            )
-        ),
-        conexiones:
-          conexiones.map(
-            conexion =>
-              this.convertirConexion(
-                conexion as FilaConexionSupabase
-              )
-          )
-      };
+        nodos: nodosCombinados,
+        conexiones: integrarMedicionesLevantadas(conexionesCombinadas,nodosCombinados.map(n=>n.id))
+      });
+
+      this.origenActivo =
+        'supabase';
+
+      this.ultimaCargaExitosa =
+        fechaIntento;
+
+      this.ultimoIntentoExitoso =
+        true;
 
       return true;
     } catch (error) {
@@ -155,8 +212,22 @@ export class MapaService {
         error
       );
 
-      return false;
+      return this.registrarFalloCarga();
     }
+  }
+
+  obtenerEstadoCarga():
+    EstadoCargaMapa {
+    return {
+      origenActivo:
+        this.origenActivo,
+      ultimaComprobacion:
+        this.ultimaComprobacion,
+      ultimaCargaExitosa:
+        this.ultimaCargaExitosa,
+      ultimoIntentoExitoso:
+        this.ultimoIntentoExitoso
+    };
   }
 
   obtenerMapaActivo():
@@ -164,6 +235,14 @@ export class MapaService {
     return this.crearCopiaMapa(
       this.mapaActivo
     );
+  }
+
+  private registrarFalloCarga():
+    false {
+    this.ultimoIntentoExitoso =
+      false;
+
+    return false;
   }
 
   obtenerNodosNavegables():
@@ -456,10 +535,7 @@ export class MapaService {
         this.normalizarIdRemoto(
           fila.destino_id
         ),
-      distancia:
-        Number(
-          fila.distancia
-        ),
+      distancia: fila.distancia === null ? null : Number(fila.distancia),
       tipo:
         fila.tipo,
       accesible:

@@ -43,16 +43,6 @@ function crearLugaresCodificados(
   );
 }
 
-/*
- * Lugares identificados en el mapa general de Duoc UC Viña del Mar
- * y en la señalética del Edificio Tecnológico CTI.
- *
- * Los niveles se registran con la numeración visible para el usuario:
- * del nivel 1 al nivel 6.
- *
- * Son referencias de orientación. No forman parte del grafo navegable:
- * faltan coordenadas, medidas, rutas internas y validación en terreno.
- */
 export const LUGARES_DUOC_VINA_REFERENCIA:
   LugarPlano[] = [
     crearLugarReferencia(
@@ -441,10 +431,6 @@ export const LUGARES_DUOC_VINA_REFERENCIA:
     )
   ];
 
-/*
- * Referencia institucional basada en señalética actual y antecedentes
- * arquitectónicos públicos. No contiene rutas navegables aún.
- */
 export const MAPA_DUOC_VINA_REFERENCIA:
   MapaNavegacion = {
     id: 'duoc-vina-referencia',

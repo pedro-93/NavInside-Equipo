@@ -1,0 +1,220 @@
+<section class="nav-wifi" [attr.aria-label]="t('Navegación Wi-Fi en movimiento', 'Wi-Fi navigation while walking', 'Navegação Wi-Fi em movimento')">
+  <header class="nav-wifi__cabecera">
+    <h3>{{ t('Navegación Wi-Fi en movimiento', 'Wi-Fi navigation while walking', 'Navegação Wi-Fi em movimento') }}</h3>
+    <button
+      type="button"
+      class="nav-wifi__boton"
+      [class.nav-wifi__boton--activo]="estado.activa"
+      [attr.aria-pressed]="estado.activa"
+      [disabled]="!estado.disponible"
+      (click)="alternar()"
+    >
+      {{ estado.activa ? t('Detener', 'Stop', 'Parar') : t('Seguirme con Wi-Fi', 'Follow me with Wi-Fi', 'Seguir-me com Wi-Fi') }}
+    </button>
+  </header>
+
+  <p class="nav-wifi__posicion" aria-live="polite">
+    <span class="nav-wifi__punto" [class.nav-wifi__punto--firme]="estado.firme" aria-hidden="true"></span>
+    {{ textoPosicion }}
+    @if (estado.activa && estado.estimacion) {
+      · {{ movimiento }}
+    }
+  </p>
+
+  <p class="nav-wifi__nota">
+    {{ t(
+      'Funciona sin conectarse a ninguna red y sin Internet: el teléfono solo escucha las señales que las antenas ya emiten y cuenta tus pasos.',
+      'Works without joining any network and without Internet: the phone only listens to signals the access points already broadcast and counts your steps.',
+      'Funciona sem conectar a nenhuma rede e sem Internet: o telefone apenas escuta os sinais que as antenas já emitem e conta seus passos.'
+    ) }}
+  </p>
+
+  @for (aviso of avisos; track aviso) {
+    <p class="nav-wifi__aviso">{{ aviso }}</p>
+  }
+
+  @if (mensaje) {
+    <p class="nav-wifi__mensaje" role="status">{{ mensaje }}</p>
+  }
+
+  <details class="nav-wifi__detalle">
+    <summary>{{ t('Diagnóstico', 'Diagnostics', 'Diagnóstico') }}</summary>
+    <dl>
+      <dt>{{ t('Pasos detectados', 'Steps detected', 'Passos detectados') }}</dt>
+      <dd>
+        @if (estado.diagnostico.acelerometro) {
+          {{ estado.diagnostico.pasos }}
+        } @else {
+          {{ t('sin datos del acelerómetro', 'no accelerometer data', 'sem dados do acelerômetro') }}
+        }
+      </dd>
+
+      <dt>{{ t('Brújula', 'Compass', 'Bússola') }}</dt>
+      <dd>
+        @if (!estado.diagnostico.brujula.disponible) {
+          {{ t('sin datos', 'no data', 'sem dados') }}
+        } @else if (estado.diagnostico.brujula.lista) {
+          {{ t('calibrada para este nivel: ayuda a elegir pasillo y sentido', 'calibrated for this level: helps choose corridor and direction', 'calibrada para este nível: ajuda a escolher corredor e sentido') }}
+        } @else {
+          {{ t('aprendiendo el giro del plano', 'learning the map rotation', 'aprendendo a rotação do mapa') }} ({{ estado.diagnostico.brujula.muestras }}/8)
+        }
+      </dd>
+
+      <dt>{{ t('Largos de pasillos', 'Corridor lengths', 'Comprimento dos corredores') }}</dt>
+      <dd>
+        {{ estado.diagnostico.geometriaPlano
+          ? t('medidas de terreno y recorridos del plano interactivo', 'field measurements and interactive map paths', 'medidas de campo e percursos do mapa interativo')
+          : t('medidas de terreno y estimaciones', 'field measurements and estimates', 'medidas de campo e estimativas') }}
+      </dd>
+
+      <dt>{{ t('Red conectada (no es necesaria)', 'Connected network (not required)', 'Rede conectada (não necessária)') }}</dt>
+      <dd>
+        @if (estado.diagnostico.conexion; as conexion) {
+          @if (conexion.connected) {
+            {{ conexion.ssid || '—' }} · {{ conexion.rssi }} dBm · {{ conexion.bssid }}
+          } @else {
+            {{ t('Sin conexión', 'Not connected', 'Sem conexão') }}
+          }
+        } @else {
+          {{ t('Sin conexión', 'Not connected', 'Sem conexão') }}
+        }
+      </dd>
+
+      <dt>{{ t('Escaneo completo', 'Full scan', 'Varredura completa') }}</dt>
+      <dd>
+        {{ t('cada', 'every', 'a cada') }} ~{{ segundosEscaneo }} s
+        @if (estado.diagnostico.capacidades?.scanThrottleEnabled) {
+          · {{ t('limitado por Android (se puede desactivar en Opciones de desarrollador → Limitación de búsqueda de Wi-Fi)', 'limited by Android (can be disabled in Developer options → Wi-Fi scan throttling)', 'limitado pelo Android (desative em Opções do desenvolvedor → Limitação de busca de Wi-Fi)') }}
+        }
+      </dd>
+
+      <dt>Wi-Fi RTT</dt>
+      <dd>
+        @if (estado.diagnostico.capacidades?.rttAvailable) {
+          {{ t('teléfono compatible', 'phone supported', 'telefone compatível') }} · {{ estado.diagnostico.puntosRtt }} {{ t('puntos de acceso compatibles a la vista', 'compatible access points in view', 'pontos de acesso compatíveis') }}
+        } @else if (estado.diagnostico.capacidades?.rttSupported) {
+          {{ t('compatible, pero no disponible ahora', 'supported but not available now', 'compatível, mas indisponível agora') }}
+        } @else {
+          {{ t('no compatible', 'not supported', 'não compatível') }}
+        }
+      </dd>
+
+      <dt>{{ t('Lecturas último minuto', 'Readings last minute', 'Leituras último minuto') }}</dt>
+      <dd>
+        {{ t('conexión', 'connection', 'conexão') }} {{ estado.diagnostico.lecturasMinuto.conexion }} ·
+        {{ t('escaneo', 'scan', 'varredura') }} {{ estado.diagnostico.lecturasMinuto.escaneo }} ·
+        RTT {{ estado.diagnostico.lecturasMinuto.rtt }}
+      </dd>
+
+      <dt>{{ t('Ajuste de este teléfono', 'This phone offset', 'Ajuste deste telefone') }}</dt>
+      <dd>{{ estado.diagnostico.desfaseDb }} dB</dd>
+
+      <dt>{{ t('Mapa de radio del nivel', 'Level radio map', 'Mapa de rádio do nível') }}</dt>
+      <dd>
+        {{ estado.diagnostico.aristasConDatos }} / {{ estado.diagnostico.aristas }} {{ t('pasillos recorridos', 'corridors surveyed', 'corredores percorridos') }} ·
+        {{ resumen.incluidas }} {{ t('incluidas', 'bundled', 'incluídas') }} ·
+        {{ resumen.locales }} {{ t('de este teléfono', 'from this phone', 'deste telefone') }} ·
+        {{ resumen.huellas }} {{ t('huellas', 'fingerprints', 'impressões') }}
+      </dd>
+
+      @if (estado.diagnostico.error) {
+        <dt>{{ t('Último error', 'Last error', 'Último erro') }}</dt>
+        <dd>{{ estado.diagnostico.error }}</dd>
+      }
+    </dl>
+  </details>
+
+  <details class="nav-wifi__detalle" [open]="levantamientoAbierto" (toggle)="alAlternarLevantamiento($event)">
+    <summary>{{ t('Levantamiento del mapa de radio (personal)', 'Radio map survey (staff)', 'Levantamento do mapa de rádio (equipe)') }}</summary>
+    @if (levantamientoAbierto || estado.levantamiento) {
+
+    <p class="nav-wifi__ayuda">
+      {{ t(
+        'Recorre cada pasillo de un extremo al otro a ritmo constante (no hace falta conectarse a ninguna red). Repite cada tramo en ambos sentidos. En el teléfono del levantamiento desactiva «Limitación de búsqueda de Wi-Fi» (Opciones de desarrollador): escanea cada 3 s en lugar de cada 30 s y el mapa queda mucho más denso.',
+        'Walk each corridor end to end at a steady pace (no need to join any network). Repeat each section in both directions. On the survey phone disable “Wi-Fi scan throttling” (Developer options): it scans every 3 s instead of every 30 s and the map is much denser.',
+        'Percorra cada corredor de ponta a ponta em ritmo constante (não é preciso conectar a nenhuma rede). Repita cada trecho nos dois sentidos. No telefone do levantamento desative a «Limitação de busca de Wi-Fi» (Opções do desenvolvedor): varre a cada 3 s em vez de 30 s e o mapa fica muito mais denso.'
+      ) }}
+    </p>
+
+    @if (estado.levantamiento; as lev) {
+      <div class="nav-wifi__grabando" role="status">
+        <strong>
+          {{ lev.tipo === 'tramo'
+            ? nombre(lev.origenId) + ' → ' + nombre(lev.destinoId)
+            : nombre(lev.origenId) }}
+        </strong>
+        · {{ segundosLevantamiento }} s · {{ lev.observaciones }} {{ t('lecturas', 'readings', 'leituras') }}
+        <div class="nav-wifi__acciones">
+          <button type="button" class="nav-wifi__boton nav-wifi__boton--activo" (click)="terminar()">
+            {{ lev.tipo === 'tramo' ? t('Llegué', 'Arrived', 'Cheguei') : t('Terminar', 'Finish', 'Terminar') }}
+          </button>
+          <button type="button" class="nav-wifi__boton nav-wifi__boton--secundario" (click)="cancelar()">
+            {{ t('Cancelar', 'Cancel', 'Cancelar') }}
+          </button>
+        </div>
+      </div>
+    } @else {
+      <label class="nav-wifi__campo">
+        {{ t('Pasillo', 'Corridor', 'Corredor') }}
+        <select [value]="tramoSeleccionado" (change)="seleccionarTramo($event)">
+          <option value="">{{ t('Elige un pasillo', 'Choose a corridor', 'Escolha um corredor') }}</option>
+          @for (tramo of tramos; track tramo.a + tramo.b) {
+            <option [value]="tramo.a + '|' + tramo.b">
+              {{ nombre(tramo.a) }} — {{ nombre(tramo.b) }} · {{ tramo.largo | number: '1.0-1' }} m{{ tramo.medida ? '' : ' ≈' }} · {{ tramo.muestras }} {{ t('muestras', 'samples', 'amostras') }}
+            </option>
+          }
+        </select>
+      </label>
+
+      @if (tramoSeleccionado) {
+        <div class="nav-wifi__acciones">
+          <button type="button" class="nav-wifi__boton" [disabled]="!estado.disponible" (click)="empezarTramo(false)">
+            {{ t('Estoy en', 'I am at', 'Estou em') }} {{ nombre(tramoSeleccionado.split('|')[0]) }}: {{ t('empezar', 'start', 'começar') }}
+          </button>
+          <button type="button" class="nav-wifi__boton" [disabled]="!estado.disponible" (click)="empezarTramo(true)">
+            {{ t('Estoy en', 'I am at', 'Estou em') }} {{ nombre(tramoSeleccionado.split('|')[1]) }}: {{ t('empezar', 'start', 'começar') }}
+          </button>
+          <button type="button" class="nav-wifi__boton nav-wifi__boton--secundario" (click)="borrarTramo()">
+            {{ t('Borrar este pasillo', 'Delete this corridor', 'Apagar este corredor') }}
+          </button>
+        </div>
+      }
+
+      <label class="nav-wifi__campo">
+        {{ t('Punto (captura detenido)', 'Point (stationary capture)', 'Ponto (captura parado)') }}
+        <select [value]="nodoSeleccionado" (change)="seleccionarNodo($event)">
+          <option value="">{{ t('Elige un punto', 'Choose a point', 'Escolha um ponto') }}</option>
+          @for (nodo of nodosNivel; track nodo.id) {
+            <option [value]="nodo.id">{{ nodo.nombre }}</option>
+          }
+        </select>
+      </label>
+      <div class="nav-wifi__acciones">
+        <button type="button" class="nav-wifi__boton" [disabled]="!estado.disponible || !nodoSeleccionado" (click)="capturarPunto()">
+          {{ t('Capturar 20 s', 'Capture 20 s', 'Capturar 20 s') }}
+        </button>
+      </div>
+    }
+
+    <div class="nav-wifi__acciones">
+      <button type="button" class="nav-wifi__boton nav-wifi__boton--secundario" (click)="exportar()">
+        {{ t('Exportar mapa de radio', 'Export radio map', 'Exportar mapa de rádio') }}
+      </button>
+    </div>
+    @if (exportado) {
+      <textarea class="nav-wifi__texto" readonly rows="3" [value]="exportado" [attr.aria-label]="t('Mapa de radio exportado', 'Exported radio map', 'Mapa de rádio exportado')"></textarea>
+    }
+
+    <label class="nav-wifi__campo">
+      {{ t('Importar (pegar o elegir archivo)', 'Import (paste or choose file)', 'Importar (colar ou escolher arquivo)') }}
+      <textarea class="nav-wifi__texto" rows="2" [value]="textoImportar" (input)="alEscribirImportar($event)"></textarea>
+    </label>
+    <div class="nav-wifi__acciones">
+      <button type="button" class="nav-wifi__boton nav-wifi__boton--secundario" [disabled]="!textoImportar" (click)="importarTexto()">
+        {{ t('Importar texto', 'Import text', 'Importar texto') }}
+      </button>
+      <input type="file" accept="application/json,.json" (change)="importarArchivo($event)" [attr.aria-label]="t('Importar archivo', 'Import file', 'Importar arquivo')" />
+    </div>
+    }
+  </details>
+</section>

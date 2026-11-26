@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="NavInside">
+  <defs>
+    <linearGradient id="fondo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1f4f86"/>
+      <stop offset="1" stop-color="#0f2a4d"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#fondo)"/>
+  <!-- Planos apilados (niveles) -->
+  <path d="M12 41 32 50 52 41 32 32Z" fill="#7fb6ff" opacity=".55"/>
+  <path d="M12 34 32 43 52 34 32 25Z" fill="#b9d8ff" opacity=".85"/>
+  <!-- Pin de ubicación -->
+  <path d="M32 9c-6.6 0-12 5.2-12 11.7C20 29.3 32 40 32 40s12-10.7 12-19.3C44 14.2 38.6 9 32 9Z" fill="#fff"/>
+  <circle cx="32" cy="20.5" r="4.6" fill="#1f4f86"/>
+</svg>

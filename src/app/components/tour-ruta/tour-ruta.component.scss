@@ -1,0 +1,85 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.tour-ruta {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border: 1px solid #c9d7e8;
+  border-radius: 0.85rem;
+  background: #f5f8fc;
+  color: #173466;
+}
+
+.tour-ruta__paso {
+  margin: 0;
+  color: #306799;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+h3 {
+  margin: 0.2rem 0 0;
+  font-size: clamp(1rem, 2.1vw, 1.25rem);
+  overflow-wrap: anywhere;
+}
+
+a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #173466;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.tour-ruta__vista {
+  position: relative;
+  align-self: center;
+  overflow: hidden;
+  border-radius: 0.55rem;
+  background: #e5edf7;
+}
+
+img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  object-fit: contain;
+  background: #102643;
+}
+
+.tour-ruta__galeria {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.4rem;
+  overflow-x: auto;
+  button { flex: 0 0 60px; border: 2px solid transparent; border-radius: 6px; padding: 0; background: #102643; }
+  button[aria-pressed='true'] { border-color: #197fd0; }
+  img { height: 44px; aspect-ratio: auto; object-fit: cover; }
+}
+
+small {
+  display: block;
+  padding: 0.28rem 0.45rem;
+  color: #173466;
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
+.tour-ruta__referencia {
+  margin: 0;
+  padding: 0.65rem;
+  font-size: 0.84rem;
+}
+
+@media (max-width: 720px) {
+  .tour-ruta {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    align-items: center;
+  }
+}

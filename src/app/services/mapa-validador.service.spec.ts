@@ -48,16 +48,11 @@ describe(
     });
 
     it('permite distancia cero únicamente en ascensores', () => {
-      const ascensores =
-        MAPA_ACTIVO.conexiones.filter(
-          conexion =>
-            conexion.tipo ===
-              'ascensor' &&
-            conexion.distancia === 0
-        );
+      const tiposSinDesplazamientoHorizontal = MAPA_ACTIVO.conexiones
+        .filter(conexion => conexion.distancia === 0)
+        .map(conexion => conexion.tipo);
 
-      expect(ascensores.length)
-        .toBe(4);
+      expect(new Set(tiposSinDesplazamientoHorizontal)).toEqual(new Set(['ascensor']));
 
       const resultado =
         servicio.validarMapa(

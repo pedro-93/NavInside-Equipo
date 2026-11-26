@@ -1,17 +1,25 @@
-<ion-content
-  fullscreen
-  class="inicio-hippocampus"
->
-  <main class="inicio-hippocampus__contenido">
+<ion-content fullscreen class="inicio-hippocampus">
+  <main class="inicio-hippocampus__contenido" [class.modo-mapa]="vistaMapa" [class.con-ruta]="vistaMapa && rutaCalculada.length > 1">
+    @if (vistaMapa) {
+      <app-vista-waze [app]="this"></app-vista-waze>
+    } @else {
+      <button type="button" class="volver-vista-mapa" (click)="volverVistaMapa()">🗺️ {{ texto('Volver al mapa', 'Back to map', 'Voltar ao mapa') }}</button>
+    }
     <header class="barra-superior">
-      <a
-        class="barra-superior__logo"
-        href="#inicio"
-        aria-label="NavInside Hippocampus"
-      >
-        <span>Nav</span>Inside
-      </a>
-
+      <div class="barra-superior__marcas">
+        <a
+          class="barra-superior__logo"
+          href="#inicio"
+          aria-label="NavInside Hippocampus"
+        >
+          <span>Nav</span>Inside
+        </a>
+        <img
+          class="barra-superior__marca-resort"
+          src="assets/hippocampus/hippocampus-logo.png"
+          alt="Logo de Hippocampus Resort & Club"
+        />
+      </div>
       <button
         class="boton-menu"
         type="button"
@@ -23,6 +31,22 @@
         {{ traducir('menu') }}
       </button>
     </header>
+    <nav class="controles-aplicacion" [attr.aria-label]="texto('Controles de la aplicación','App controls','Controles do aplicativo')">
+      <button type="button" class="boton-menu controles-aplicacion__atras" (click)="volverAtras()"
+        [disabled]="seguimientoIniciando || movimientoEnCurso">← {{ traducir('atras') }}</button>
+      <button type="button" class="boton-menu controles-aplicacion__ubicacion" (click)="aquiEstoy()"
+        [disabled]="seguimientoIniciando" [attr.aria-expanded]="ubicacionAbierta"
+        [attr.aria-controls]="ubicacionAbierta ? 'ubicacion-actual' : null"
+        [attr.aria-busy]="estadoApoyo.buscandoWifi">
+        <span aria-hidden="true">⌖</span> {{ traducir('aquiEstoy') }}
+      </button>
+      @if (puedeSalirAplicacion) {
+        <button type="button" class="boton-menu menu-principal__salir controles-aplicacion__salir" (click)="salirAplicacion()"
+          [attr.aria-label]="traducir('salirAplicacion')" [title]="traducir('salirAplicacion')">
+          {{ texto('Salir', 'Exit', 'Sair') }}
+        </button>
+      }
+    </nav>
 
     @if (menuAbierto) {
       <section
@@ -38,21 +62,35 @@
             <button
               type="button"
               [class.activo]="idiomaSeleccionado === 'es'"
+              [attr.aria-pressed]="idiomaSeleccionado === 'es'"
+              aria-label="Español"
+              title="Español"
               (click)="seleccionarIdioma('es')"
-            >ES · Español</button>
+            >
+              <img src="assets/banderas/espana.svg" width="27" height="18" alt="" aria-hidden="true" />
+            </button>
             <button
               type="button"
               [class.activo]="idiomaSeleccionado === 'en'"
+              [attr.aria-pressed]="idiomaSeleccionado === 'en'"
+              aria-label="English"
+              title="English"
               (click)="seleccionarIdioma('en')"
-            >EN · English</button>
+            >
+              <img src="assets/banderas/reino-unido.svg" width="27" height="18" alt="" aria-hidden="true" />
+            </button>
             <button
               type="button"
               [class.activo]="idiomaSeleccionado === 'pt'"
+              [attr.aria-pressed]="idiomaSeleccionado === 'pt'"
+              aria-label="Português"
+              title="Português"
               (click)="seleccionarIdioma('pt')"
-            >PT · Português</button>
+            >
+              <img src="assets/banderas/portugal.svg" width="27" height="18" alt="" aria-hidden="true" />
+            </button>
           </div>
         </div>
-
         <a href="#puntos-interes" (click)="alternarMenu()">
           {{ traducir('puntosInteres') }}
         </a>
@@ -71,13 +109,24 @@
         src="assets/hippocampus/resort-hero.webp"
         alt="Piscina, palmeras y vista al mar en Hippocampus Resort & Club"
       />
-
       <div class="inicio-hippocampus__marca">
         <p>NavInside</p>
-
-        <h1>
-          Hippocampus Resort & Club
-        </h1>
+        <h1>Hippocampus Resort & Club</h1>
+        <button
+          class="inicio-hippocampus__voz"
+          type="button"
+          (click)="comandoVozActivo ? detenerComandoVozRuta() : iniciarComandoVozRuta()"
+          [disabled]="!reconocimientoVozDisponible"
+          [attr.aria-pressed]="comandoVozActivo"
+        >
+          <span aria-hidden="true">🎙</span>
+          {{ traducir(comandoVozActivo ? 'detenerComandoVoz' : 'pedirRutaPorVoz') }}
+        </button>
+        @if (estadoComandoVoz) {
+          <p class="inicio-hippocampus__voz-estado" aria-live="polite">
+            {{ estadoComandoVoz }}
+          </p>
+        }
       </div>
     </section>
 
@@ -91,33 +140,91 @@
           <p>{{ traducir('explorarResort') }}</p>
           <h2>{{ traducir('puntosInteres') }}</h2>
         </div>
-        <span>{{ traducir('nivel') }} {{ nivelVisualizado }}</span>
-      </div>
-
-      <div class="puntos-interes__lista">
-        @for (punto of puntosInteresNivel; track punto.id) {
-          <button
-            type="button"
-            class="tarjeta-punto"
-            [class.seleccionado]="destino === punto.id"
-            (click)="seleccionarPuntoInteres(punto)"
-          >
-            @if (fotoPuntoInteres(punto.id); as foto) {
-              <img
-                class="tarjeta-punto__imagen"
-                [src]="foto.src"
-                [alt]="foto.alt"
-                loading="lazy"
-              />
-            } @else {
-              <span class="tarjeta-punto__icono" aria-hidden="true">
-                {{ punto.tipo === 'gimnasio' ? '⌁' : punto.tipo === 'spa' ? '✦' : punto.tipo === 'salon' ? '▦' : '●' }}
-              </span>
-            }
-            <span class="tarjeta-punto__nombre">{{ nombreNodo(punto) }}</span>
-          </button>
+        @if (nivelVisualizado === 6) {
+          <span>
+            {{ idiomaSeleccionado === 'en' ? 'Floor' : idiomaSeleccionado === 'pt' ? 'Andar' : 'Piso' }}
+            6
+          </span>
+        } @else {
+          <span>
+            {{ traducir('nivel') }}
+            {{ nivelVisualizado }}
+          </span>
         }
       </div>
+
+      <nav
+        class="selector-nivel-mapa"
+        [attr.aria-label]="traducir('seleccionarNivelMapa')"
+      >
+        <button
+          type="button"
+          [class.activo]="nivelVisualizado === 1"
+          [attr.aria-pressed]="nivelVisualizado === 1"
+          (click)="mostrarNivelMapa(1)"
+        >
+          {{ traducir('nivel') }} 1
+        </button>
+        <button
+          type="button"
+          [class.activo]="nivelVisualizado === 3"
+          [attr.aria-pressed]="nivelVisualizado === 3"
+          (click)="mostrarNivelMapa(3)"
+        >
+          {{ traducir('nivel') }} 3
+        </button>
+        <button
+          type="button"
+          [class.activo]="nivelVisualizado === 4"
+          [attr.aria-pressed]="nivelVisualizado === 4"
+          (click)="mostrarNivelMapa(4)"
+        >
+          {{ traducir('nivel') }} 4
+        </button>
+        <button
+          type="button"
+          [class.activo]="nivelVisualizado === 5"
+          [attr.aria-pressed]="nivelVisualizado === 5"
+          (click)="mostrarNivelMapa(5)"
+        >
+          {{ traducir('nivel') }} 5
+        </button>
+        <button
+          type="button"
+          [class.activo]="nivelVisualizado === 6"
+          [attr.aria-pressed]="nivelVisualizado === 6"
+          (click)="mostrarNivelMapa(6)"
+        >
+          {{ idiomaSeleccionado === 'en' ? 'Floor' : idiomaSeleccionado === 'pt' ? 'Andar' : 'Piso' }}
+          6
+        </button>
+      </nav>
+
+        <div class="puntos-interes__lista">
+          @for (punto of puntosInteresNivel; track punto.id) {
+            <button
+              type="button"
+              class="tarjeta-punto"
+              [class.seleccionado]="puntoInteresSeleccionado(punto)"
+              (click)="seleccionarPuntoInteres(punto)"
+            >
+              @if (fotoPuntoInteres(punto.id); as foto) {
+                <img
+                  class="tarjeta-punto__imagen"
+                  [src]="foto.src"
+                  [alt]="nombrePuntoInteres(punto)"
+                  loading="lazy"
+                  (error)="marcarFotoTourFallida(punto.id)"
+                />
+              } @else {
+                <img class="tarjeta-punto__imagen" [src]="imagenIcono(punto)" alt="" aria-hidden="true" />
+              }
+              <span class="tarjeta-punto__nombre">
+                {{ nombrePuntoInteres(punto) }}
+              </span>
+            </button>
+          }
+        </div>
     </section>
 
     <section id="navegacion" class="planificador-ruta">
@@ -128,31 +235,77 @@
         </div>
       </div>
 
-      <label>
-        {{ traducir('origen') }}
-        <select
-          [value]="origen"
-          (change)="origen = $any($event.target).value; cambiarSeleccionRuta()"
-        >
-          <option value="">{{ traducir('seleccionarOrigen') }}</option>
-          @for (lugar of lugares; track lugar.id) {
-            <option [value]="lugar.id">{{ nombreNodo(lugar) }}</option>
-          }
-        </select>
-      </label>
+      <div class="seleccion-voz">
+        <label>
+          {{ traducir('origen') }}
+          <div class="seleccion-voz__control">
+            <select
+              [value]="origen"
+              (change)="origen = $any($event.target).value; cambiarSeleccionRuta()"
+            >
+              <option value="">
+                {{ traducir('seleccionarOrigen') }}
+              </option>
+              @for (lugar of lugares; track lugar.id) {
+                <option [value]="lugar.id">
+                  {{ nombreNodo(lugar) }}
+                </option>
+              }
+            </select>
+            <button
+              type="button"
+              class="seleccion-voz__microfono"
+              (click)="campoSeleccionVozActivo === 'origen' ? detenerSeleccionVoz() : iniciarSeleccionVoz('origen')"
+              [disabled]="!reconocimientoVozDisponible"
+              [attr.aria-pressed]="campoSeleccionVozActivo === 'origen'"
+              [attr.aria-label]="traducir('seleccionarOrigenPorVoz')"
+            >
+              <span aria-hidden="true">🎙</span>
+              {{ traducir(campoSeleccionVozActivo === 'origen' ? 'detenerComandoVoz' : 'hablarOrigen') }}
+            </button>
+          </div>
+        </label>
+      </div>
 
-      <label>
-        {{ traducir('destino') }}
-        <select
-          [value]="destino"
-          (change)="destino = $any($event.target).value; cambiarSeleccionRuta()"
-        >
-          <option value="">{{ traducir('seleccionarDestino') }}</option>
-          @for (lugar of lugares; track lugar.id) {
-            <option [value]="lugar.id">{{ nombreNodo(lugar) }}</option>
-          }
-        </select>
-      </label>
+      <div class="seleccion-voz">
+        <label>
+          {{ traducir('destino') }}
+          <div class="seleccion-voz__control">
+            <select
+              [value]="destino"
+              (change)="destino = $any($event.target).value; cambiarSeleccionRuta()"
+            >
+              <option value="">
+                {{ traducir('seleccionarDestino') }}
+              </option>
+              @for (lugar of lugares; track lugar.id) {
+                @if (lugar.id !== origen) {
+                  <option [value]="lugar.id">
+                    {{ nombreNodo(lugar) }}
+                  </option>
+                }
+              }
+            </select>
+            <button
+              type="button"
+              class="seleccion-voz__microfono"
+              (click)="campoSeleccionVozActivo === 'destino' ? detenerSeleccionVoz() : iniciarSeleccionVoz('destino')"
+              [disabled]="!reconocimientoVozDisponible"
+              [attr.aria-pressed]="campoSeleccionVozActivo === 'destino'"
+              [attr.aria-label]="traducir('seleccionarDestinoPorVoz')"
+            >
+              <span aria-hidden="true">🎙</span>
+              {{ traducir(campoSeleccionVozActivo === 'destino' ? 'detenerComandoVoz' : 'hablarDestino') }}
+            </button>
+          </div>
+        </label>
+      </div>
+
+      @if (estadoSeleccionVoz) {
+        <p class="seleccion-voz__estado" aria-live="polite">
+          {{ estadoSeleccionVoz }}
+        </p>
+      }
 
       <div class="comando-voz-ruta">
         <button
@@ -190,8 +343,440 @@
         {{ traducir('calcularRuta') }}
       </button>
 
+      <div class="comando-voz-ruta">
+        <button
+          type="button"
+          class="comando-voz-ruta__boton"
+          (click)="leerQrReal()"
+          [disabled]="seguimientoIniciando"
+        >
+          {{ texto('Leer código QR', 'Scan QR code', 'Ler código QR') }}
+        </button>
+        <button
+          type="button"
+          class="comando-voz-ruta__boton"
+          (click)="simularLecturaQr()"
+          [disabled]="seguimientoFisicoSeleccionado || seguimientoIniciando"
+        >
+          {{ texto('Simular QR de la entrada', 'Simulate entrance QR', 'Simular QR da entrada') }}
+        </button>
+      </div>
+
+      <section aria-labelledby="apoyo-ubicacion-titulo">
+        <h3 id="apoyo-ubicacion-titulo">
+          {{ texto('Ubicación asistida · Wi-Fi y GPS', 'Assisted location · Wi-Fi and GPS', 'Localização assistida · Wi-Fi e GPS') }}
+        </h3>
+        <p>
+          {{ texto(
+            'Puedes confirmar un sector manualmente o activar la corrección automática durante el seguimiento. El GPS sobre el plano requiere referencias precisas de ese nivel. Los cambios de piso se confirman por separado.',
+            'You can confirm an area manually or enable automatic correction during tracking. GPS on the map requires accurate references on that floor. Floor changes are confirmed separately.',
+            'Você pode confirmar um setor manualmente ou ativar a correção automática durante o acompanhamento. GPS no mapa exige referências precisas desse andar. Mudanças de andar são confirmadas separadamente.'
+          ) }}
+        </p>
+        @if (ubicacionAbierta) {
+          <div id="ubicacion-actual" class="ubicacion-manual">
+            <label for="punto-ubicacion">{{ texto('Confirma el punto donde estás','Confirm your current point','Confirme o ponto onde está') }}</label>
+            <select #selectorUbicacion id="punto-ubicacion" [value]="puntoUbicacionSeleccionado"
+              (change)="puntoUbicacionSeleccionado = $any($event.target).value" [disabled]="seguimientoIniciando">
+              <option value="">{{ texto('Selecciona tu ubicación','Choose your location','Selecione sua localização') }}</option>
+              @for (punto of puntosParaUbicacion; track punto.id) {
+                <option [value]="punto.id">{{ nombreNodo(punto) }} · {{ traducir('nivel') }} {{ punto.nivel }}</option>
+              }
+            </select>
+            <button type="button" class="confirmar-ubicacion" (click)="confirmarUbicacionManual()"
+              [disabled]="!puntoUbicacionSeleccionado || seguimientoIniciando">{{ texto('Confirmar: aquí estoy','Confirm: I am here','Confirmar: estou aqui') }}</button>
+          </div>
+        }
+        @if (origenConfirmadoSeguimiento && origen && wifiDisponible) {
+          <button type="button" (click)="guardarSenalesDelPunto()"
+            [disabled]="estadoApoyo.buscandoWifi || seguimientoIniciando">{{ texto('Guardar señales de este punto','Save signals for this point','Salvar sinais deste ponto') }}</button>
+        }
+        @if (!wifiDisponible) {
+          <p>{{ texto('Confirma tu punto manualmente o escanea el QR del lugar.', 'Confirm your point manually or scan its QR code.', 'Confirme o ponto manualmente ou leia seu QR.') }}</p>
+        }
+        @if (estadoApoyo.errorWifi) {
+          <p role="status">{{ texto('No se obtuvo una lectura Wi-Fi nueva. Comprueba Wi-Fi, ubicación y permiso de ubicación precisa; espera al menos 35 segundos entre intentos.', 'No fresh Wi-Fi reading was obtained. Check Wi-Fi, location and precise-location permission; wait at least 35 seconds between attempts.', 'Não foi obtida uma leitura Wi-Fi nova. Verifique Wi-Fi, localização e permissão de localização precisa; aguarde pelo menos 35 segundos entre tentativas.') }}</p>
+        }
+        @if (estadoApoyo.lecturas.length > 0) {
+          <ul>
+            @for (red of estadoApoyo.lecturas; track $index) {
+              <li>{{ red.ssid || texto('Red oculta', 'Hidden network', 'Rede oculta') }}: {{ red.rssi }} dBm · {{ red.bssid }} · {{ red.frequency }} MHz</li>
+            }
+          </ul>
+          @if (estadoApoyo.candidatos.length === 0) {
+            <p>{{ texto('No hay coincidencias suficientes con el levantamiento.', 'Insufficient matches with the survey.', 'Não há correspondências suficientes com o levantamento.') }}</p>
+          }
+        }
+        @for (candidato of estadoApoyo.candidatos; track candidato.huella.id) {
+          <p>{{ texto('Sector sugerido:', 'Suggested area:', 'Setor sugerido:') }} {{ candidato.huella.nombre }} · {{ candidato.coincidencias }} {{ texto('señales coincidentes. Estimación preliminar.', 'matching signals. Preliminary estimate.', 'sinais correspondentes. Estimativa preliminar.') }}</p>
+          @for (id of candidato.huella.nodoIds; track id) {
+            <button type="button" (click)="confirmarPoiApoyo(id, 'wifi')" [disabled]="seguimientoIniciando">
+              {{ texto('Confirmo que estoy en', 'I confirm I am at', 'Confirmo que estou em') }} {{ nombrePuntoApoyo(id) }}
+            </button>
+          }
+        }
+        @if (poiSugeridoGps; as poiGps) {
+          <button type="button" (click)="confirmarPoiApoyo(poiGps.id, 'gps')" [disabled]="seguimientoIniciando">
+            GPS · {{ texto('Confirmo que estoy en', 'I confirm I am at', 'Confirmo que estou em') }} {{ nombreNodo(poiGps) }}
+          </button>
+        }
+        @if (seguimientoFisicoSeleccionado && origen) {
+          <p>{{ texto('Solo estando físicamente en el origen del resort: confirma ese lugar para guardar su referencia GPS en este teléfono.', 'Only when physically at the resort origin: confirm that location to save its GPS reference on this phone.', 'Somente estando fisicamente na origem do resort: confirme esse local para salvar sua referência GPS neste telefone.') }}</p>
+          <button type="button" (click)="guardarReferenciaGpsOrigen()" [disabled]="seguimientoIniciando">
+            {{ texto('Estoy en el origen: guardar GPS', 'I am at the origin: save GPS', 'Estou na origem: salvar GPS') }}
+          </button>
+        }
+        @if (seguimientoFisicoSeleccionado && origen) {
+          <p>{{ texto('Captura referencias solo estando físicamente en el POI elegido del resort. No las guardes desde tu casa. Para GPS sobre el plano se requieren al menos tres puntos separados, no alineados y con precisión de 3 m o mejor, por nivel.',
+            'Capture references only when physically at the selected resort POI. Do not save them from home. GPS on the map requires at least three separated, non-collinear points with accuracy of 3 m or better per floor.',
+            'Capture referências somente estando fisicamente no POI escolhido do resort. Não salve de casa. GPS no mapa exige pelo menos três pontos separados, não alinhados e com precisão de 3 m ou melhor por andar.') }}</p>
+          <button type="button" (click)="guardarHuellaWifiOrigen()" [disabled]="seguimientoIniciando || estadoApoyo.buscandoWifi">
+            {{ texto('Estoy en el origen: guardar huella Wi-Fi', 'I am at the origin: save Wi-Fi fingerprint', 'Estou na origem: salvar impressão Wi-Fi') }}
+          </button>
+        }
+        @if (mensajeApoyo) {
+          <p role="status">{{ mensajeApoyo }}</p>
+        }
+        <details>
+          <summary>{{ texto('Ver mediciones del levantamiento con WiFi Analyzer', 'View WiFi Analyzer survey measurements', 'Ver medições do levantamento com WiFi Analyzer') }}</summary>
+          <p>{{ origenLevantamientoWifi.herramienta }} · {{ origenLevantamientoWifi.fecha }}</p>
+          @for (huella of huellasWifi; track huella.id) {
+            <h4>{{ huella.nombre }} · {{ huella.hora }}</h4>
+            <p>{{ huella.observacion }}</p>
+            <ul>
+              @for (lectura of huella.lecturas; track $index) {
+                <li>{{ lectura.ssid }}: {{ lectura.rssi }} dBm · {{ texto('Canal', 'Channel', 'Canal') }} {{ lectura.canal }} · BSSID: {{ lectura.bssid || texto('Sin registrar','Not recorded','Não registrado') }}
+                  @if (lectura.aproximada) { · {{ texto('aproximación del gráfico','chart estimate','estimativa do gráfico') }} }
+                </li>
+              }
+              @for (red of huella.redesSinRssi || []; track $index) {
+                <li>{{ red.ssid }} · BSSID: {{ red.bssid }} · {{ texto('RSSI no legible en la fila recortada','RSSI unreadable in cropped row','RSSI ilegível na linha cortada') }}</li>
+              }
+            </ul>
+          }
+          <h4>Inventario adicional del nivel 3 · pendiente de asociación</h4>
+          <p>Estas lecturas no se utilizan para posicionar: faltan el punto exacto, BSSID y frecuencia confirmados.</p>
+          @for (captura of inventarioGeneralNivelTres; track captura.id) {
+            <h5>{{ captura.id }}</h5>
+            <ul>
+              @for (lectura of captura.lecturas; track $index) {
+                <li>{{ lectura.ssid }} · {{ lectura.rssi === null ? 'RSSI sin registrar' : lectura.rssi + ' dBm' }}{{ lectura.posibleHotspot ? ' · posible punto de acceso móvil, excluido' : '' }}</li>
+              }
+            </ul>
+          }
+          @for (captura of capturasWifiPorAsociar; track captura.id) {
+            <h4>{{ captura.nombre }}</h4>
+            <p>{{ texto('Captura recibida; falta confirmar el lugar. Se conserva y no se usa para sugerir una ubicación.', 'Received scan; location needs confirmation. It is retained and not used for location suggestions.', 'Captura recebida; falta confirmar o local. É preservada e não é usada para sugerir localização.') }}</p>
+            <ul>
+              @for (lectura of captura.lecturas; track $index) {
+                <li>{{ lectura.ssid }}: {{ lectura.rssi }} dBm · {{ texto('Canal','Channel','Canal') }} {{ lectura.canal }} · BSSID: {{ lectura.bssid }}</li>
+              }
+              @for (red of captura.redesSinRssi || []; track $index) {
+                <li>{{ red.ssid }} · BSSID: {{ red.bssid }} · {{ texto('RSSI no legible en la fila recortada','RSSI unreadable in cropped row','RSSI ilegível na linha cortada') }}</li>
+              }
+            </ul>
+          }
+        </details>
+        <details class="inventario-levantamiento">
+          <summary>{{ texto('Cobertura Wi-Fi por punto de interés','Wi-Fi coverage by point of interest','Cobertura Wi-Fi por ponto de interesse') }}</summary>
+          @for (registro of resumenWifiPorPunto; track registro.nodo.id) {
+            <p class="cobertura-wifi-punto" [attr.data-poi]="registro.nodo.id"><strong>{{ nombreNodo(registro.nodo) }}</strong> ·
+              @if (registro.huellas.length) {
+                {{ registro.huellas.length }} {{ texto('captura(s) disponible(s)','available capture(s)','captura(s) disponível(is)') }}
+                @for (huella of registro.huellas; track huella.id) {
+                  <span> · {{ huella.lecturas.length }} {{ texto('señales','signals','sinais') }}
+                    @if (huella.nodoIds.length > 1) { · {{ texto('sector compartido','shared area','setor compartilhado') }} }
+                  </span>
+                }
+              } @else if (registro.referenciasCompartidas.length) {
+                {{ texto('Referencia compartida recibida','Shared reference received','Referência compartilhada recebida') }}
+                @for (referencia of registro.referenciasCompartidas; track referencia.id) {
+                  · {{ referencia.ssid }} · {{ texto('medida en','measured at','medida em') }} {{ nombrePuntoApoyo(referencia.nodoMedidoId) }}
+                  · {{ texto('sin dBm individuales para este punto','no individual dBm for this point','sem dBm individuais para este ponto') }}
+                }
+              } @else { {{ texto('Sin captura vinculada en esta versión','No scan linked in this version','Sem captura vinculada nesta versão') }} }
+            </p>
+          }
+          <details>
+            <summary>{{ texto('Inventario inicial: 16 antenas o sectores','Initial inventory: 16 access points or areas','Inventário inicial: 16 antenas ou setores') }}</summary>
+            @for (zona of inventarioWifi; track zona.id) {
+              <p>{{ zona.ubicacion }} · {{ zona.cobertura }} · {{ texto('Cobertura informada; consultar las capturas asociadas','Reported coverage; see linked scans','Cobertura informada; consultar as capturas associadas') }}</p>
+            }
+          </details>
+        </details>
+        <details class="inventario-levantamiento">
+          <summary>{{ texto('Medidas del levantamiento: 24 tramos','Survey distances: 24 sections','Medidas do levantamento: 24 trechos') }}</summary>
+          <div class="tabla-levantamiento"><table>
+            <thead><tr><th>#</th><th>{{ traducir('origen') }}</th><th>{{ traducir('destino') }}</th><th>m</th><th>{{ texto('Registro','Record','Registro') }}</th></tr></thead>
+            <tbody>
+              @for (tramo of tramosLevantados; track tramo.id) {
+                <tr><td>{{ tramo.id }}</td><td>{{ nombrePuntoApoyo(tramo.origen) }} · {{ tramo.nivelOrigen }}</td>
+                  <td>{{ nombrePuntoApoyo(tramo.destino) }} · {{ tramo.nivelDestino }}</td>
+                  <td>{{ formatearMedidaLevantamiento(tramo.distancia) }}</td><td>{{ etiquetaMedicion(tramo.estado) }}
+                    @if (tramo.observacion) { <small>{{ tramo.observacion }}</small> }
+                  </td></tr>
+              }
+            </tbody>
+          </table></div>
+        </details>
+      </section>
+
+      @if (mensajeUbicacion) {
+        <p class="resultado-ruta" role="status">
+          {{ mensajeUbicacion }}
+        </p>
+      }
+
       @if (resultado) {
         <p class="resultado-ruta">{{ resultado }}</p>
+      }
+    </section>
+
+    <section
+      #mapaNavegacion
+      class="inicio-hippocampus__mapa"
+      aria-label="Mapa navegable del resort"
+    >
+      <nav
+        class="selector-nivel-mapa"
+        [attr.aria-label]="traducir('seleccionarNivelMapa')"
+      >
+        <button
+          type="button"
+          [class.activo]="nivelVisualizado === 1"
+          [attr.aria-pressed]="nivelVisualizado === 1"
+          (click)="mostrarNivelMapa(1)"
+        >
+          {{ traducir('nivel') }} 1
+        </button>
+        <button
+          type="button"
+          [class.activo]="nivelVisualizado === 3"
+          [attr.aria-pressed]="nivelVisualizado === 3"
+          (click)="mostrarNivelMapa(3)"
+        >
+          {{ traducir('nivel') }} 3
+        </button>
+        <button
+          type="button"
+          [class.activo]="nivelVisualizado === 4"
+          [attr.aria-pressed]="nivelVisualizado === 4"
+          (click)="mostrarNivelMapa(4)"
+        >
+          {{ traducir('nivel') }} 4
+        </button>
+        <button
+          type="button"
+          [class.activo]="nivelVisualizado === 5"
+          [attr.aria-pressed]="nivelVisualizado === 5"
+          (click)="mostrarNivelMapa(5)"
+        >
+          {{ traducir('nivel') }} 5
+        </button>
+        <button
+          type="button"
+          [class.activo]="nivelVisualizado === 6 && !vistaResortCompleto"
+          [attr.aria-pressed]="nivelVisualizado === 6 && !vistaResortCompleto"
+          (click)="mostrarNivelMapa(6)"
+        >
+          {{ idiomaSeleccionado === 'en' ? 'Floor' : idiomaSeleccionado === 'pt' ? 'Andar' : 'Piso' }}
+          6
+        </button>
+        <button
+          type="button"
+          [class.activo]="vistaResortCompleto"
+          [attr.aria-pressed]="vistaResortCompleto"
+          (click)="mostrarVistaResortCompleto()"
+        >
+          {{ idiomaSeleccionado === 'en' ? 'Full resort' : idiomaSeleccionado === 'pt' ? 'Resort completo' : 'Resort completo' }}
+        </button>
+        @if (nivelVisualizado === 1) {
+          <button
+            type="button"
+            class="selector-nivel-mapa__orientacion"
+            [attr.aria-pressed]="orientacionFisicaVisible"
+            (click)="alternarOrientacionFisica()"
+          >
+            {{ orientacionFisicaVisible
+              ? (idiomaSeleccionado === 'en' ? 'Hide physical orientation' : idiomaSeleccionado === 'pt' ? 'Ocultar orientação física' : 'Ocultar orientación física')
+              : (idiomaSeleccionado === 'en' ? 'Show physical orientation' : idiomaSeleccionado === 'pt' ? 'Mostrar orientação física' : 'Mostrar orientación física') }}
+          </button>
+        }
+      </nav>
+
+      <div class="mapa-con-tour" [class.mapa-con-tour--activo]="rutaCalculada.length > 1">
+        <div class="mapa-con-tour__plano">
+          @if (vistaResortCompleto) {
+            <figure class="vista-resort-completo">
+              <img
+                src="assets/hippocampus/resort-completo.jpg"
+                alt="Vista aérea completa de Hippocampus Resort"
+              />
+              <figcaption>{{ idiomaSeleccionado === 'en' ? 'Full view of Hippocampus Resort' : idiomaSeleccionado === 'pt' ? 'Vista completa do Hippocampus Resort' : 'Vista completa del Hippocampus Resort' }}</figcaption>
+            </figure>
+          } @else if (nivelVisualizado === 1) {
+            <iframe #mapaNivelUno class="mapa-interactivo-iframe mapa-interactivo-iframe--guiado"
+              src="assets/mapas/nivel-1-navegacion.html" title="Mapa interactivo del Nivel 1 de Hippocampus"
+              (load)="actualizarCursorMapa(true)"></iframe>
+          } @else if (nivelVisualizado === 3) {
+            <iframe #mapaNivelTres class="mapa-interactivo-iframe mapa-interactivo-iframe--guiado"
+              src="assets/mapas/nivel-3-navegacion.html" title="Mapa interactivo del Nivel 3 de Hippocampus"
+              (load)="actualizarCursorMapa(true)"></iframe>
+          } @else if (nivelVisualizado === 4) {
+            <iframe
+              #mapaNivelCuatro
+              class="mapa-interactivo-iframe mapa-interactivo-iframe--guiado"
+              src="assets/mapas/nivel-4-navegacion.html"
+              title="Mapa interactivo del Nivel 4 de Hippocampus"
+              loading="lazy"
+              (load)="actualizarCursorMapa(true)"
+            ></iframe>
+          } @else if (nivelVisualizado === 5) {
+            <iframe
+              #mapaNivelCinco
+              class="mapa-interactivo-iframe mapa-interactivo-iframe--guiado mapa-interactivo-iframe--nivel-5"
+              src="assets/mapas/nivel-5-navegacion.html"
+              title="Mapa interactivo del Nivel 5: Salón CostaMar"
+              loading="lazy"
+              (load)="actualizarCursorMapa(true)"
+            ></iframe>
+          } @else if (nivelVisualizado === 6) {
+            <iframe #mapaNivelSeis class="mapa-interactivo-iframe mapa-interactivo-iframe--guiado"
+              src="assets/mapas/nivel-6-navegacion.html" title="Mapa interactivo del Piso 6 de Hippocampus"
+              (load)="actualizarCursorMapa(true)"></iframe>
+          } @else {
+            <app-mapa-ruta
+              [nodos]="nodosMapa"
+              [conexiones]="conexionesMapa"
+              [ruta]="rutaCalculada"
+              [nivel]="nivelVisualizado"
+              [usarPlanoReal]="nivelVisualizado === 1 || nivelVisualizado === 3 || nivelVisualizado === 6"
+              [mostrarGuiaFisicaNivelUno]="nivelVisualizado === 1 && orientacionFisicaVisible"
+              [textoUbicacionActual]="traducir('cursorRecorrido')"
+              [origenId]="origenId"
+              [destinoId]="destinoId"
+              [nodoActualId]="nodoActualId"
+              [posicionGpsPlano]="estadoAutomatico.posicion"
+              [textoInstruccionFisica]="seguimientoFisicoSeleccionado ? instruccionSeguimientoFisico : ''"
+              [seguimientoFisico]="seguimientoFisicoSeleccionado ? seguimientoFisico : null"
+              [textoLlegadaEstimada]="textoLlegadaEstimada"
+              [textoConfirmarNivel]="textoConfirmarNivel"
+              [duracionVozObjetivoMs]="duracionVozPasoMs"
+              (movimientoRutaIniciado)="sincronizarVozConMovimiento($event)"
+              (movimientoRutaCompletado)="continuarRecorridoAutomatico()"
+              [textoEtiqueta]="traducir('mapaDelResort')"
+              [textoNivel]="nivelVisualizado === 6 ? (idiomaSeleccionado === 'en' ? 'Floor' : idiomaSeleccionado === 'pt' ? 'Andar' : 'Piso') : traducir('nivel')"
+              [textoEstado]="traducir('navegacionInterior')"
+              [textoAriaMapa]="'Mapa navegable de Hippocampus Resort, ' + (nivelVisualizado === 6 ? 'piso ' : 'nivel ') + nivelVisualizado"
+              [textoSinDatos]="traducir('mapaSinDatos')"
+              [textoNodo]="traducir('puntoInteres')"
+              [textoRuta]="traducir('rutaCalculada')"
+              [textoOrigen]="traducir('origen')"
+              [textoDestino]="traducir('destino')"
+              textoAccesoCerrado="Acceso cerrado"
+              [textoNavegacion]="traducir('guiaRuta')"
+              [textoPaso]="traducir('paso')"
+              [textoSigueHacia]="traducir('sigueHacia')"
+              [textoLlegada]="traducir('llegada')"
+              [textoGuiaFisica]="traducir('guiaFisicaNivelUno')"
+              [textoDesdeAscensoresPrincipales]="traducir('desdeAscensoresPrincipales')"
+              [textoDesdeHall]="traducir('desdeHall')"
+              [textoIzquierda]="traducir('izquierda')"
+              [textoDerecha]="traducir('derecha')"
+              [textoRutaAscensoresIzquierda]="traducir('rutaAscensoresIzquierda')"
+              [textoRutaAscensoresDerecha]="traducir('rutaAscensoresDerecha')"
+              [textoRutaHallDerecha]="traducir('rutaHallDerecha')"
+              [textoRutaHallIzquierda]="traducir('rutaHallIzquierda')"
+              [textoNotaAccesoEscaleras]="traducir('notaAccesoEscaleras')"
+              (puntoMapaSeleccionado)="seleccionarPuntoMapa($event)"
+            >
+            </app-mapa-ruta>
+          }
+        </div>
+
+        @if (nodoVistaRuta; as nodo) {
+          <aside class="mapa-con-tour__vista">
+            <app-tour-ruta
+              [nodo]="nodoFotoRuta ?? nodo"
+              [idioma]="idiomaSeleccionado"
+              [numero]="rutaCalculada.indexOf(nodo) + 1"
+              [total]="rutaCalculada.length"
+            ></app-tour-ruta>
+            <p class="mapa-con-tour__indicacion">{{ instruccionActual }}</p>
+            <div class="mapa-con-tour__avance guia-paso-a-paso__acciones">
+              <button
+                type="button"
+                (click)="retrocederPaso()"
+                [disabled]="esPrimerPaso || seguimientoFisicoSeleccionado || seguimientoIniciando || movimientoEnCurso"
+              >
+                ← {{ traducir('pasoAnterior') }}
+              </button>
+              <button
+                type="button"
+                class="guia-paso-a-paso__siguiente"
+                (click)="avanzarPaso()"
+                [disabled]="esUltimoPaso || seguimientoFisicoSeleccionado || seguimientoIniciando || movimientoEnCurso"
+              >
+                {{ traducir('pasoSiguiente') }} →
+              </button>
+              <button
+                type="button"
+                class="guia-paso-a-paso__automatico"
+                [attr.aria-label]="texto('Recorrido visual: iniciar o pausar','Visual route: start or pause','Percurso visual: iniciar ou pausar')"
+                (click)="recorridoAutomaticoActivo ? detenerRecorridoAutomatico() : iniciarRecorridoAutomatico()"
+                [disabled]="seguimientoFisicoSeleccionado || seguimientoIniciando || (esUltimoPaso && !recorridoAutomaticoActivo)"
+              >
+                {{ recorridoAutomaticoActivo ? texto('Pausar', 'Pause', 'Pausar') : texto('Iniciar', 'Start', 'Iniciar') }}
+              </button>
+            </div>
+          </aside>
+        }
+      </div>
+
+      @if (admin.activo) {
+      <app-navegacion-wifi
+        id="navegacion-wifi"
+        [nivel]="nivelVisualizado"
+        [nodos]="nodosMapa"
+        [conexiones]="conexionesMapa"
+        [ruta]="rutaCalculada"
+        [origenId]="origen"
+        [idioma]="idiomaSeleccionado"
+      ></app-navegacion-wifi>
+      }
+
+      @if (esUltimoPaso && fotoDestinoSeleccionado; as foto) {
+        @if (!fotoLlegadaCerrada) {
+          <div class="foto-llegada-overlay" role="dialog" aria-modal="true" aria-label="{{ mensajeFotoDestino }}">
+            <article class="foto-llegada">
+              <button
+                type="button"
+                class="foto-llegada__cerrar"
+                (click)="cerrarFotoLlegada()"
+                [attr.aria-label]="idiomaSeleccionado === 'en' ? 'Close destination image' : idiomaSeleccionado === 'pt' ? 'Fechar imagem do destino' : 'Cerrar imagen del destino'"
+              >×</button>
+              <img class="foto-llegada__principal" [src]="foto.src" [alt]="foto.alt" (error)="marcarFotoTourFallida(destino)" />
+              @if (destinoSeleccionado; as lugar) {
+                <div class="foto-llegada__titulo">
+                  <p>{{ mensajeFotoDestino }}</p>
+                  <h2>{{ nombreNodo(lugar) }}</h2>
+                </div>
+              }
+            </article>
+          </div>
+        }
+      } @else if (fotoDestinoSeleccionado; as foto) {
+        <aside class="detalle-destino" aria-live="polite">
+          <div class="detalle-destino__imagenes">
+            <img [src]="foto.src" [alt]="foto.alt" (error)="marcarFotoTourFallida(destino)" />
+          </div>
+          <div>
+            <p>{{ mensajeFotoDestino }}</p>
+            @if (destinoSeleccionado; as lugar) {
+              <h3>{{ nombreNodo(lugar) }}</h3>
+            }
+          </div>
+        </aside>
       }
     </section>
 
@@ -219,48 +804,244 @@
 
         <p class="guia-paso-a-paso__estado">
           {{ traducir('pasoDe', { actual: numeroPasoActual, total: totalPasos }) }}
-          · {{ traducir('nivel') }} {{ nivelVisualizado }}
+          ·
+          @if (nivelVisualizado === 6) {
+            {{ idiomaSeleccionado === 'en' ? 'Floor' : idiomaSeleccionado === 'pt' ? 'Andar' : 'Piso' }}
+            6
+          } @else {
+            {{ traducir('nivel') }}
+            {{ nivelVisualizado }}
+          }
         </p>
 
         <dl class="guia-paso-a-paso__distancias">
           <div>
             <dt>{{ traducir('distanciaTotal') }}</dt>
-            <dd>{{ formatearMetros(distanciaTotal ?? 0) }} {{ traducir('unidades') }}</dd>
+            <dd>{{ textoDistanciaRuta(distanciaTotal, metrajeRuta(0)) }}</dd>
           </div>
           <div>
             <dt>{{ traducir('distanciaRestante') }}</dt>
-            <dd>{{ formatearMetros(distanciaRestante) }} {{ traducir('unidades') }}</dd>
+            <dd>{{ textoDistanciaRuta(distanciaRestante, metrajeRuta(pasoActualIndice)) }}</dd>
           </div>
           <div>
             <dt>{{ traducir('proximoTramo') }}</dt>
-            <dd>{{ formatearMetros(distanciaProximoTramo) }} {{ traducir('unidades') }}</dd>
+            <dd>{{ textoDistanciaRuta(distanciaProximoTramo, metrajeRuta(pasoActualIndice, pasoActualIndice + 1)) }}</dd>
           </div>
         </dl>
 
+        @if (rutaCalculada.length > 1 && !rutaConDistanciaMedida) {
+          <p class="guia-paso-a-paso__demo">
+            {{ texto(
+              'Este recorrido incluye tramos por medir. Puedes seguir la guía paso a paso y revisar las vistas de sus puntos.',
+              'This route includes sections awaiting measurement. Use the step-by-step guide and the views of its stops.',
+              'Esta rota inclui trechos a medir. Use o guia passo a passo e as vistas dos pontos.'
+            ) }}
+          </p>
+        }
+
+        @if (rutaCalculada.length > 1 && rutaConDistanciaMedida) {
+          <section
+            aria-labelledby="seguimiento-fisico-titulo"
+            aria-live="off"
+          >
+            <h3 id="seguimiento-fisico-titulo">
+              {{ texto('Seguir al caminar · Experimental', 'Track while walking · Experimental', 'Acompanhar ao caminhar · Experimental') }}
+            </h3>
+            <p
+              class="guia-paso-a-paso__demo"
+              id="seguimiento-fisico-ayuda"
+            >
+              {{ texto(
+                'El avance se estima con tus pasos sobre la ruta elegida. Puede acumular error y no detecta por sí solo si tomas otro camino. El GPS se muestra como referencia. Usa QR para corregir tu ubicación.',
+                'Progress is estimated from your steps along the selected route. Error can accumulate and taking another path is not detected automatically. GPS is shown as a reference. Use QR to correct your location.',
+                'O avanço é estimado pelos seus passos na rota escolhida. Pode acumular erros e não detecta sozinho se você segue outro caminho. O GPS é exibido como referência. Use QR para corrigir sua localização.'
+              ) }}
+            </p>
+
+            @if (!seguimientoFisicoSeleccionado) {
+              <p>
+                <label for="longitud-paso">
+                  {{ texto('Longitud estimada del paso, en metros', 'Estimated step length, in metres', 'Comprimento estimado do passo, em metros') }}
+                </label>
+                <input
+                  #entradaLongitudPaso
+                  id="longitud-paso"
+                  type="number"
+                  min="0.1"
+                  max="2"
+                  step="0.01"
+                  inputmode="decimal"
+                  [value]="longitudPasoMetros"
+                  (input)="cambiarLongitudPaso(entradaLongitudPaso.value)"
+                  [disabled]="seguimientoIniciando"
+                  aria-describedby="longitud-paso-ayuda"
+                />
+              </p>
+              <p
+                id="longitud-paso-ayuda"
+                class="guia-paso-a-paso__demo"
+              >
+                {{ texto(
+                  'El valor inicial configurado es de 0,200 m por paso, según la medición con láser del levantamiento. Puedes ajustarlo antes de iniciar el seguimiento.',
+                  'The initial setting is 0.200 m per step, based on the laser measurement recorded during the survey. You can adjust it before starting tracking.',
+                  'O valor inicial configurado é de 0,200 m por passo, conforme a medição com laser do levantamento. Você pode ajustá-lo antes de iniciar o acompanhamento.'
+                ) }}
+              </p>
+              <p>
+                <label>
+                  <input
+                    id="confirmar-origen-seguimiento"
+                    type="checkbox"
+                    [checked]="origenConfirmadoSeguimiento"
+                    (change)="origenConfirmadoSeguimiento = $any($event.target).checked"
+                    [disabled]="seguimientoIniciando"
+                  />
+                  {{ texto('Estoy en', 'I am at', 'Estou em') }}
+                  {{ nombreOrigenSeguimiento }}
+                </label>
+              </p>
+              <div class="guia-paso-a-paso__acciones">
+                <button
+                  type="button"
+                  class="guia-paso-a-paso__siguiente"
+                  (click)="iniciarSeguimientoFisico()"
+                  [disabled]="!puedeIniciarSeguimientoFisico"
+                  aria-describedby="seguimiento-fisico-ayuda"
+                >
+                  {{ texto('Iniciar al caminar', 'Start walking navigation', 'Iniciar ao caminhar') }}
+                </button>
+              </div>
+            } @else {
+              <p class="guia-paso-a-paso__estado">
+                {{ textoEstadoGps }} ·
+                {{ texto('Movimiento', 'Motion', 'Movimento') }}:
+                {{ etiquetaEstadoSensor(estadoSensores.movimiento) }}
+              </p>
+              <p class="guia-paso-a-paso__estado">
+                {{ texto('Pasos estimados', 'Estimated steps', 'Passos estimados') }}:
+                {{ seguimientoFisico?.pasosEstimados ?? 0 }}
+              </p>
+
+              <p class="guia-paso-a-paso__estado" role="status">
+                {{ textoOrientacionSeguimiento }}
+              </p>
+              <p class="guia-paso-a-paso__demo">
+                {{ texto(
+                  'Para estimar avance, regreso y posibles desvíos, apunta el teléfono hacia el siguiente pasillo y calibra la dirección. Conserva esa posición respecto a tu cuerpo al caminar. La brújula puede fallar cerca de metales; usa QR para confirmar tu ubicación. Calibra de nuevo al cambiar de piso.',
+                  'To estimate forward motion, returning and possible deviations, point your phone along the next corridor and calibrate its heading. Keep that position relative to your body while walking. Metal can affect the compass; use QR to confirm your location. Calibrate again after changing floors.',
+                  'Para estimar avanço, retorno e possíveis desvios, aponte o telefone para o próximo corredor e calibre a direção. Mantenha essa posição em relação ao corpo ao caminhar. Metais podem afetar a bússola; use QR para confirmar sua localização. Calibre novamente ao mudar de andar.'
+                ) }}
+              </p>
+              <div class="guia-paso-a-paso__acciones">
+                <button
+                  type="button"
+                  (click)="calibrarOrientacionSeguimiento()"
+                  [disabled]="seguimientoIniciando || seguimientoFisico?.fase !== 'siguiendo'"
+                >
+                  {{ texto('Calibrar dirección', 'Calibrate heading', 'Calibrar direção') }}
+                </button>
+                @if (seguimientoFisico?.orientacionCalibrada) {
+                  <button type="button" (click)="desactivarOrientacionSeguimiento()">
+                    {{ texto('Usar solo pasos hacia delante', 'Use forward steps only', 'Usar apenas passos para frente') }}
+                  </button>
+                }
+              </div>
+
+              <div class="guia-paso-a-paso__acciones">
+                <button type="button" (click)="alternarNavegacionAutomatica()"
+                  [disabled]="seguimientoIniciando || seguimientoFisico?.fase !== 'siguiendo'"
+                  [attr.aria-pressed]="estadoAutomatico.activa">
+                  {{ estadoAutomatico.activa ? texto('Desactivar corrección automática', 'Disable automatic correction', 'Desativar correção automática') : texto('Activar Wi-Fi/GPS automático', 'Enable automatic Wi-Fi/GPS', 'Ativar Wi-Fi/GPS automático') }}
+                </button>
+              </div>
+              @if (estadoAutomatico.activa) {
+                <p role="status">{{ textoAutomatico }}</p>
+              }
+
+              @if (seguimientoIniciando) {
+                <p role="status">
+                  {{ texto('Preparando sensores…', 'Preparing sensors…', 'Preparando sensores…') }}
+                </p>
+              }
+
+              @if (estadoSensores.movimiento === 'esperando') {
+                <p class="guia-paso-a-paso__demo">
+                  {{ texto(
+                    'Esperando movimiento del teléfono. En un computador el cursor no avanzará al caminar.',
+                    'Waiting for phone motion. Walking navigation does not work on a desktop computer.',
+                    'Aguardando movimento do telefone. A navegação ao caminhar não funciona em um computador.'
+                  ) }}
+                </p>
+              }
+
+              @if (estadoSensores.movimiento === 'error' || estadoSensores.movimiento === 'sin-permiso') {
+                <p role="status">
+                  {{ texto(
+                    'No se reciben lecturas de movimiento. Revisa los permisos y prueba desde la aplicación del teléfono.',
+                    'Motion readings are unavailable. Check permissions and try the app on your phone.',
+                    'As leituras de movimento estão indisponíveis. Verifique as permissões e teste o aplicativo no telefone.'
+                  ) }}
+                </p>
+              }
+
+              <div class="guia-paso-a-paso__acciones">
+                @if (seguimientoFisico?.fase === 'pausado') {
+                  <button
+                    type="button"
+                    (click)="reanudarSeguimientoFisico()"
+                    [disabled]="seguimientoIniciando || comandoVozActivo || campoSeleccionVozActivo !== null"
+                  >
+                    {{ texto('Reanudar al caminar', 'Resume walking navigation', 'Retomar ao caminhar') }}
+                  </button>
+                }
+
+                @if (seguimientoFisico?.fase === 'siguiendo' || seguimientoFisico?.fase === 'confirmar-nivel') {
+                  <button
+                    type="button"
+                    (click)="pausarSeguimientoFisico()"
+                    [disabled]="seguimientoIniciando"
+                  >
+                    {{ texto('Pausar seguimiento', 'Pause tracking', 'Pausar acompanhamento') }}
+                  </button>
+                }
+
+                @if (seguimientoFisico?.fase === 'confirmar-nivel' || seguimientoFisico?.fase === 'llegada-estimada') {
+                  <button
+                    type="button"
+                    (click)="confirmarUbicacionSeguimiento()"
+                    [disabled]="seguimientoIniciando"
+                  >
+                    {{ texto('Confirmo que estoy en', 'I confirm I am at', 'Confirmo que estou em') }}
+                    {{ nombreNodoConfirmacion }}
+                  </button>
+                }
+
+                @if (seguimientoFisico?.fase !== 'completado') {
+                  <button
+                    type="button"
+                    (click)="leerQrReal()"
+                    [disabled]="seguimientoIniciando"
+                  >
+                    {{ texto('Corregir ubicación con QR', 'Correct location with QR', 'Corrigir localização com QR') }}
+                  </button>
+                }
+
+                <button
+                  type="button"
+                  (click)="finalizarSeguimientoFisico()"
+                >
+                  {{ texto('Salir del seguimiento', 'Exit tracking', 'Sair do acompanhamento') }}
+                </button>
+              </div>
+            }
+
+            @if (errorSeguimiento) {
+              <p role="alert">{{ errorSeguimiento }}</p>
+            }
+          </section>
+        }
+
         <div class="guia-paso-a-paso__acciones">
-          <button
-            type="button"
-            (click)="retrocederPaso()"
-            [disabled]="esPrimerPaso"
-          >
-            ← {{ traducir('pasoAnterior') }}
-          </button>
-          <button
-            type="button"
-            class="guia-paso-a-paso__siguiente"
-            (click)="avanzarPaso()"
-            [disabled]="esUltimoPaso"
-          >
-            {{ traducir('pasoSiguiente') }} →
-          </button>
-          <button
-            type="button"
-            class="guia-paso-a-paso__automatico"
-            (click)="recorridoAutomaticoActivo ? detenerRecorridoAutomatico() : iniciarRecorridoAutomatico()"
-            [disabled]="esUltimoPaso && !recorridoAutomaticoActivo"
-          >
-            {{ traducir(recorridoAutomaticoActivo ? 'pausarCursor' : 'iniciarCursor') }}
-          </button>
           <button
             type="button"
             (click)="alternarAsistenteVoz()"
@@ -284,87 +1065,17 @@
             ↺ {{ traducir('reiniciarRuta') }}
           </button>
         </div>
+
         <p class="guia-paso-a-paso__voz" aria-live="polite">
           {{ estadoAsistenteVoz }}
         </p>
         <p class="guia-paso-a-paso__demo">
-          {{ traducir('cursorDemostracion') }}
+          @if (!seguimientoFisicoSeleccionado) {
+            {{ traducir('cursorDemostracion') }}
+          }
         </p>
       </section>
     }
 
-    <section
-      class="inicio-hippocampus__mapa"
-      aria-label="Mapa navegable del resort"
-    >
-      <nav class="selector-nivel-mapa" [attr.aria-label]="traducir('seleccionarNivelMapa')">
-        <button
-          type="button"
-          [class.activo]="nivelVisualizado === 1"
-          [attr.aria-pressed]="nivelVisualizado === 1"
-          (click)="mostrarNivelMapa(1)"
-        >{{ traducir('nivel') }} 1</button>
-        <button
-          type="button"
-          [class.activo]="nivelVisualizado === 3"
-          [attr.aria-pressed]="nivelVisualizado === 3"
-          (click)="mostrarNivelMapa(3)"
-        >{{ traducir('nivel') }} 3</button>
-      </nav>
-
-      <app-mapa-ruta
-        [nodos]="nodosMapa"
-        [conexiones]="conexionesMapa"
-        [ruta]="rutaCalculada"
-        [nivel]="nivelVisualizado"
-        [usarPlanoReal]="nivelVisualizado === 1 || nivelVisualizado === 3"
-        [mostrarGuiaFisicaNivelUno]="nivelVisualizado === 1"
-        [textoUbicacionActual]="traducir('cursorRecorrido')"
-        [origenId]="origenId"
-        [destinoId]="destinoId"
-        [nodoActualId]="nodoActualId"
-        [textoEtiqueta]="traducir('mapaDelResort')"
-        [textoNivel]="traducir('nivel')"
-        [textoEstado]="traducir('navegacionInterior')"
-        [textoAriaMapa]="
-          'Mapa navegable de Hippocampus Resort, nivel ' +
-          nivelVisualizado
-        "
-        [textoSinDatos]="traducir('mapaSinDatos')"
-        [textoNodo]="traducir('puntoInteres')"
-        [textoRuta]="traducir('rutaCalculada')"
-        [textoOrigen]="traducir('origen')"
-        [textoDestino]="traducir('destino')"
-        textoAccesoCerrado="Acceso cerrado"
-        [textoNavegacion]="traducir('guiaRuta')"
-        [textoPaso]="traducir('paso')"
-        [textoSigueHacia]="traducir('sigueHacia')"
-        [textoLlegada]="traducir('llegada')"
-        [textoGuiaFisica]="traducir('guiaFisicaNivelUno')"
-        [textoDesdeAscensoresPrincipales]="traducir('desdeAscensoresPrincipales')"
-        [textoDesdeHall]="traducir('desdeHall')"
-        [textoIzquierda]="traducir('izquierda')"
-        [textoDerecha]="traducir('derecha')"
-        [textoRutaAscensoresIzquierda]="traducir('rutaAscensoresIzquierda')"
-        [textoRutaAscensoresDerecha]="traducir('rutaAscensoresDerecha')"
-        [textoRutaHallDerecha]="traducir('rutaHallDerecha')"
-        [textoRutaHallIzquierda]="traducir('rutaHallIzquierda')"
-        [textoNotaAccesoEscaleras]="traducir('notaAccesoEscaleras')"
-        (puntoMapaSeleccionado)="seleccionarPuntoMapa($event)"
-      >
-      </app-mapa-ruta>
-
-      @if (fotoDestinoSeleccionado; as foto) {
-        <aside class="detalle-destino" aria-live="polite">
-          <img [src]="foto.src" [alt]="foto.alt" />
-          <div>
-            <p>{{ mensajeFotoDestino }}</p>
-            @if (destinoSeleccionado; as lugar) {
-              <h3>{{ nombreNodo(lugar) }}</h3>
-            }
-          </div>
-        </aside>
-      }
-    </section>
   </main>
 </ion-content>

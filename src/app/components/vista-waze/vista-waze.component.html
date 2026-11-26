@@ -1,0 +1,336 @@
+@if (enRuta) {
+  <div class="waze-instruccion" aria-live="polite">
+    <span class="waze-instruccion__flecha" aria-hidden="true">➜</span>
+    <div class="waze-instruccion__texto">
+      <strong>{{ app.instruccionActual }}</strong>
+      <small>{{ t('Faltan', 'Remaining', 'Faltam') }} {{ textoRestante }} · {{ app.numeroPasoActual }}/{{ app.totalPasos }}</small>
+    </div>
+  </div>
+}
+
+@if (!enRuta) {
+  <div class="waze-marcas" aria-label="NavInside · Hippocampus Resort &amp; Club">
+    <img class="waze-marcas__resort" src="assets/hippocampus/hippocampus-logo.png" alt="Hippocampus Resort &amp; Club" />
+    <strong>NavInside</strong>
+  </div>
+}
+
+<button type="button" class="waze-boton-menu" [class.waze-boton-menu--bajo]="enRuta"
+  (click)="menuAbierto = true" [attr.aria-expanded]="menuAbierto"
+  [attr.aria-label]="t('Menú', 'Menu', 'Menu')">
+  <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+</button>
+
+<div class="waze-derecha" [class.waze-derecha--bajo]="enRuta">
+  <button type="button" class="waze-redondo waze-redondo--navinside" (click)="planosAbiertos = !planosAbiertos"
+    [attr.aria-expanded]="planosAbiertos" [attr.aria-label]="t('Planos de NavInside', 'NavInside maps', 'Mapas do NavInside')">
+    <img src="assets/hippocampus/hippocampus-logo.png" alt="" width="42" height="42" />
+  </button>
+  <button type="button" class="waze-redondo" (click)="aquiEstoy()"
+    [attr.aria-label]="t('Aquí estoy', 'I am here', 'Estou aqui')">⌖</button>
+  @if (app.admin.activo && app.estadoWifi?.activa) {
+    <span class="waze-wifi" [class.waze-wifi--firme]="app.estadoWifi.firme" aria-hidden="true">📶</span>
+  }
+</div>
+
+@if (planosAbiertos) {
+  <div class="waze-planos" role="menu" [attr.aria-label]="t('Planos', 'Maps', 'Mapas')">
+    <p>{{ t('Planos de la app', 'App maps', 'Mapas do app') }}</p>
+    @for (nivel of niveles; track nivel) {
+      <button type="button" role="menuitem" [class.activo]="!app.vistaResortCompleto && app.nivelVisualizado === nivel" (click)="verPlano(nivel)">
+        🗺️ {{ nombreNivel(nivel) }}
+      </button>
+    }
+    <button type="button" role="menuitem" [class.activo]="app.vistaResortCompleto" (click)="verPlano('resort')">
+      🏝️ {{ t('Resort completo', 'Full resort', 'Resort completo') }}
+    </button>
+  </div>
+}
+
+<section class="waze-hoja" [class.waze-hoja--abierta]="hoja === 'abierta'" [class.waze-hoja--arrastrando]="arrastrando"
+  [style.height.px]="altura" [attr.aria-label]="t('Buscar destino', 'Search destination', 'Buscar destino')">
+  <button type="button" class="waze-hoja__asa"
+    (pointerdown)="inicioArrastre($event)" (pointermove)="moverArrastre($event)"
+    (pointerup)="finArrastre($event)" (pointercancel)="finArrastre($event)"
+    (keydown.arrowup)="ajustarHoja('abierta')" (keydown.arrowdown)="ajustarHoja('minima')"
+    [attr.aria-label]="hoja === 'abierta' ? t('Bajar', 'Collapse', 'Recolher') : t('Subir: ver todos los puntos', 'Expand: see all places', 'Subir: ver todos os pontos')"></button>
+
+  @if (hoja === 'abierta') {
+    <div class="waze-campos">
+      <div class="waze-campos__lista">
+        <button type="button" class="waze-campo" [class.activo]="campo === 'origen'" (click)="abrirBusqueda('origen')">
+          <span class="waze-campo__punto waze-campo__punto--origen" aria-hidden="true"></span>
+          <span>{{ nodoOrigen ? nombre(nodoOrigen) : t('Elige tu origen', 'Choose your origin', 'Escolha a origem') }}</span>
+        </button>
+        <button type="button" class="waze-campo" [class.activo]="campo === 'destino'" (click)="abrirBusqueda('destino')">
+          <span class="waze-campo__punto" aria-hidden="true"></span>
+          <span>{{ nodoDestino ? nombre(nodoDestino) : t('¿Adónde vas?', 'Where to?', 'Para onde vai?') }}</span>
+        </button>
+      </div>
+      <button type="button" class="waze-intercambiar" (click)="intercambiar()" [disabled]="!app.origen && !app.destino"
+        [attr.aria-label]="t('Intercambiar origen y destino', 'Swap origin and destination', 'Trocar origem e destino')">⇅</button>
+    </div>
+  }
+
+  @if (enRuta && hoja !== 'abierta') {
+    <div class="waze-ruta">
+      <div class="waze-ruta__destino">
+        @if (nodoDestino && foto(nodoDestino); as src) {
+          <img [src]="src" alt="" />
+        } @else if (nodoDestino) {
+          <img class="waze-icono" [src]="app.imagenIcono(nodoDestino)" alt="" />
+        }
+        <div>
+          <small>{{ nombre(nodoOrigen) }} → </small>
+          <strong>{{ nombre(nodoDestino) }}</strong>
+          <small>{{ textoDistancia }} · {{ nombreNivel(nodoDestino?.nivel) }}</small>
+        </div>
+        <button type="button" class="waze-cerrar" (click)="app.cancelarRuta()" [attr.aria-label]="t('Cancelar ruta', 'Cancel route', 'Cancelar rota')">✕</button>
+      </div>
+      <div class="waze-ruta__acciones">
+        <button type="button" (click)="app.retrocederPaso()"
+          [disabled]="app.esPrimerPaso || app.seguimientoFisicoSeleccionado || app.movimientoEnCurso">←</button>
+        <button type="button" class="waze-principal"
+          (click)="app.recorridoAutomaticoActivo ? app.detenerRecorridoAutomatico() : app.iniciarRecorridoAutomatico()"
+          [disabled]="app.seguimientoFisicoSeleccionado || (app.esUltimoPaso && !app.recorridoAutomaticoActivo)">
+          {{ app.recorridoAutomaticoActivo ? t('Pausar', 'Pause', 'Pausar') : t('Iniciar', 'Start', 'Iniciar') }}
+        </button>
+        <button type="button" (click)="app.avanzarPaso()"
+          [disabled]="app.esUltimoPaso || app.seguimientoFisicoSeleccionado || app.movimientoEnCurso">→</button>
+        @if (app.admin.activo) {
+          <button type="button" (click)="seguirmeWifi()" [class.activo]="app.estadoWifi?.activa">
+            📶 {{ app.estadoWifi?.activa ? t('Detener Wi-Fi', 'Stop Wi-Fi', 'Parar Wi-Fi') : t('Seguirme', 'Follow me', 'Seguir-me') }}
+          </button>
+        }
+      </div>
+      @if (app.nodoVistaRuta; as parada) {
+        <button type="button" class="waze-enlace" (click)="fotosParada = !fotosParada" [attr.aria-expanded]="fotosParada">
+          📷 {{ fotosParada ? t('Ocultar fotos de la parada', 'Hide stop photos', 'Ocultar fotos da parada') : t('Ver fotos de la parada', 'See stop photos', 'Ver fotos da parada') }}
+        </button>
+        @if (fotosParada) {
+          <app-tour-ruta [nodo]="app.nodoFotoRuta ?? parada" [idioma]="app.idiomaSeleccionado"
+            [numero]="app.rutaCalculada.indexOf(parada) + 1" [total]="app.rutaCalculada.length"></app-tour-ruta>
+        }
+      }
+    </div>
+  } @else {
+    <div class="waze-buscar">
+      <span aria-hidden="true">🔍</span>
+      <input #campoBusqueda type="search" [value]="consulta" (input)="escribir($event)" (focus)="hoja !== 'abierta' && abrirBusqueda(campo)" (click)="hoja !== 'abierta' && abrirBusqueda(campo)"
+        [placeholder]="campo === 'origen' ? t('¿Dónde estás?', 'Where are you?', 'Onde você está?') : t('¿Adónde vas?', 'Where to?', 'Para onde vai?')"
+        [attr.aria-label]="campo === 'origen' ? t('Buscar origen', 'Search origin', 'Buscar origem') : t('Buscar destino', 'Search destination', 'Buscar destino')" />
+      <button type="button" class="waze-microfono" [class.activo]="escuchando" (click)="alternarVoz()"
+        [attr.aria-pressed]="escuchando" [attr.aria-label]="t('Buscar por voz', 'Search by voice', 'Buscar por voz')">🎙</button>
+    </div>
+    @if (estadoVoz) {
+      <p class="waze-estado" aria-live="polite">{{ estadoVoz }}</p>
+    }
+  }
+
+  @if (hoja !== 'abierta' && !enRuta) {
+    <div class="waze-chips">
+      <button type="button" (click)="abrirBusqueda('origen')">
+        <span aria-hidden="true">⌖</span> {{ nodoOrigen ? nombre(nodoOrigen) : t('Origen', 'Origin', 'Origem') }}
+      </button>
+      <button type="button" [class.activo]="app.modoAccesible" [attr.aria-pressed]="app.modoAccesible"
+        (click)="app.modoAccesible = !app.modoAccesible; app.cambiarModoAccesible()">
+        <span aria-hidden="true">♿</span> {{ t('Accesible', 'Accessible', 'Acessível') }}
+      </button>
+      <button type="button" (click)="abrirExplora()">
+        <span aria-hidden="true">🧭</span> {{ t('Explora', 'Explore', 'Explorar') }}
+      </button>
+    </div>
+
+    <div class="waze-puntos">
+      <p class="waze-puntos__titulo">{{ app.traducir('puntosInteres') }} · {{ app.nivelVisualizado }}</p>
+      <div class="waze-puntos__tira" role="list">
+        @for (punto of app.puntosPlanoNivel; track punto.node) {
+          <button type="button" role="listitem" class="waze-punto" [class.activo]="!!punto.canonical && app.destino === punto.canonical" (click)="abrirPuntoPlano(punto)">
+            @if (punto.photo) {
+              <img [src]="punto.photo" [alt]="punto.name" loading="lazy" />
+            } @else {
+              <img class="waze-punto__icono" [src]="app.imagenIconoNombre(punto.name)" alt="" />
+            }
+            <strong>{{ punto.name }}</strong>
+          </button>
+        }
+        @for (nodo of (app.puntosPlanoNivel.length ? [] : app.puntosInteresNivel); track nodo.id) {
+          <button type="button" role="listitem" class="waze-punto" [class.activo]="app.destino === nodo.id" (click)="elegirPuntoTira(nodo)">
+            @if (foto(nodo); as src) {
+              <img [src]="src" [alt]="nombre(nodo)" loading="lazy" />
+            } @else {
+              <img class="waze-punto__icono" [src]="app.imagenIcono(nodo)" alt="" />
+            }
+            <strong>{{ nombre(nodo) }}</strong>
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  @if (hoja === 'abierta') {
+    <div class="waze-resultados">
+      @for (grupo of resultados; track grupo.nivel) {
+        @if (grupo.nivel !== null) {
+          <p class="waze-resultados__nivel">{{ nombreNivel(grupo.nivel) }}</p>
+        }
+        @for (nodo of grupo.items; track nodo.id) {
+          <button type="button" class="waze-lugar" (click)="seleccionar(nodo)">
+            @if (foto(nodo); as src) {
+              <img [src]="src" alt="" loading="lazy" />
+            } @else {
+              <img class="waze-icono" [src]="app.imagenIcono(nodo)" alt="" />
+            }
+            <span class="waze-lugar__texto">
+              <strong>{{ nombre(nodo) }}</strong>
+              <small>{{ nombreNivel(nodo.nivel) }}</small>
+            </span>
+          </button>
+        }
+      } @empty {
+        <p class="waze-estado">{{ t('Sin resultados. Prueba con otra palabra.', 'No results. Try another word.', 'Sem resultados. Tente outra palavra.') }}</p>
+      }
+    </div>
+  }
+
+  @if (hoja === 'abierta' || !enRuta) {
+    <div class="waze-opciones">
+      <p>{{ t('Más opciones', 'More options', 'Mais opções') }}</p>
+      <button type="button" class="waze-opcion" (click)="abrirExplora()">
+        <span class="waze-opcion__icono" aria-hidden="true">🧭</span>
+        <span><strong>{{ t('Explora', 'Explore', 'Explorar') }}</strong>
+          <small>{{ t('Recorre los puntos de interés de cada nivel con sus fotos', 'Browse each level’s places with photos', 'Percorra os pontos de cada nível com fotos') }}</small></span>
+      </button>
+      <button type="button" class="waze-opcion" (click)="panel = 'tour'">
+        <span class="waze-opcion__icono" aria-hidden="true">🌐</span>
+        <span><strong>{{ t('Tour virtual 360', '360 virtual tour', 'Tour virtual 360') }}</strong>
+          <small>{{ t('Mira los lugares antes de ir', 'See places before you go', 'Veja os lugares antes de ir') }}</small></span>
+      </button>
+      <div class="waze-tour-tira" role="list">
+        @for (escena of muestraTour; track escena.id) {
+          <button type="button" role="listitem" (click)="panel = 'tour'" [attr.aria-label]="escena.nombre">
+            <img [src]="escena.miniatura" alt="" loading="lazy" />
+            <span>{{ escena.nombre }}</span>
+          </button>
+        }
+      </div>
+    </div>
+  }
+</section>
+
+@if (menuAbierto) {
+  <div class="waze-velo" (click)="menuAbierto = false" aria-hidden="true"></div>
+  <nav class="waze-cajon" [attr.aria-label]="t('Menú', 'Menu', 'Menu')">
+    <div class="waze-cajon__cabecera">
+      <img class="waze-cajon__logo" src="assets/hippocampus/hippocampus-logo.png" alt="" width="44" height="44" (click)="toqueLogo()" />
+      <div><strong>NavInside</strong><small>Hippocampus Resort &amp; Club</small></div>
+      <button type="button" class="waze-cerrar" (click)="menuAbierto = false" [attr.aria-label]="t('Cerrar', 'Close', 'Fechar')">✕</button>
+    </div>
+
+    <p class="waze-cajon__titulo">{{ t('Idioma', 'Language', 'Idioma') }}</p>
+    <div class="waze-idiomas">
+      <button type="button" [class.activo]="app.idiomaSeleccionado === 'es'" [attr.aria-pressed]="app.idiomaSeleccionado === 'es'" (click)="app.seleccionarIdioma('es')">
+        <img src="assets/banderas/espana.svg" width="27" height="18" alt="" /> Español</button>
+      <button type="button" [class.activo]="app.idiomaSeleccionado === 'en'" [attr.aria-pressed]="app.idiomaSeleccionado === 'en'" (click)="app.seleccionarIdioma('en')">
+        <img src="assets/banderas/reino-unido.svg" width="27" height="18" alt="" /> English</button>
+      <button type="button" [class.activo]="app.idiomaSeleccionado === 'pt'" [attr.aria-pressed]="app.idiomaSeleccionado === 'pt'" (click)="app.seleccionarIdioma('pt')">
+        <img src="assets/banderas/portugal.svg" width="27" height="18" alt="" /> Português</button>
+    </div>
+
+    <p class="waze-cajon__titulo">{{ t('Navegación', 'Navigation', 'Navegação') }}</p>
+    <button type="button" (click)="menu(() => abrirBusqueda('destino'))">🔍 {{ t('Buscar destino', 'Search destination', 'Buscar destino') }}</button>
+    <button type="button" (click)="menu(() => aquiEstoy())">⌖ {{ t('Aquí estoy', 'I am here', 'Estou aqui') }}</button>
+    <button type="button" (click)="menu(() => app.leerQrReal())">🔳 {{ t('Leer código QR', 'Scan QR code', 'Ler código QR') }}</button>
+    <button type="button" [attr.aria-pressed]="app.modoAccesible" (click)="app.modoAccesible = !app.modoAccesible; app.cambiarModoAccesible()">
+      ♿ {{ app.traducir('rutaAccesible') }}: {{ app.modoAccesible ? t('sí', 'on', 'sim') : t('no', 'off', 'não') }}</button>
+
+    <p class="waze-cajon__titulo">{{ t('Descubre', 'Discover', 'Descubra') }}</p>
+    <button type="button" (click)="menu(() => abrirExplora())">🧭 {{ t('Explora', 'Explore', 'Explorar') }}</button>
+    <button type="button" (click)="menu(() => panel = 'tour')">🌐 {{ t('Tour virtual 360', '360 virtual tour', 'Tour virtual 360') }}</button>
+    <button type="button" (click)="menu(() => planosAbiertos = true)">🗺️ {{ t('Planos', 'Maps', 'Mapas') }}</button>
+
+    @if (app.admin.activo) {
+      <p class="waze-cajon__titulo">{{ t('Administrador', 'Administrator', 'Administrador') }}</p>
+      <button type="button" (click)="menu(() => app.abrirVistaClasica('navegacion-wifi'))">📶 {{ t('Navegación Wi-Fi en movimiento', 'Wi-Fi navigation while walking', 'Navegação Wi-Fi em movimento') }}</button>
+      <button type="button" (click)="app.salirModoAdmin()">🔒 {{ t('Salir del modo administrador', 'Leave administrator mode', 'Sair do modo administrador') }}</button>
+    } @else if (pidiendoPin) {
+      <form class="waze-admin" (submit)="$event.preventDefault(); entrarAdmin(pinAdmin.value); pinAdmin.value = ''">
+        <label>
+          {{ t('PIN de administrador', 'Administrator PIN', 'PIN de administrador') }}
+          <input #pinAdmin type="password" inputmode="numeric" autocomplete="off" maxlength="12" />
+        </label>
+        <button type="submit" class="waze-principal">{{ t('Entrar', 'Enter', 'Entrar') }}</button>
+        @if (errorPin) {
+          <small>{{ t('PIN incorrecto.', 'Wrong PIN.', 'PIN incorreto.') }}</small>
+        }
+      </form>
+    }
+
+    <p class="waze-cajon__titulo">{{ t('App', 'App', 'App') }}</p>
+    <button type="button" (click)="menu(() => app.abrirVistaClasica('inicio'))">📄 {{ t('Vista clásica (todas las secciones)', 'Classic view (all sections)', 'Visão clássica (todas as seções)') }}</button>
+    @if (app.puedeSalirAplicacion) {
+      <button type="button" class="waze-salir" (click)="menu(() => app.salirAplicacion())">⏻ {{ t('Salir de la aplicación', 'Exit the app', 'Sair do aplicativo') }}</button>
+    }
+  </nav>
+}
+
+@if (panel === 'explora') {
+  <section class="waze-panel" [attr.aria-label]="t('Explora', 'Explore', 'Explorar')">
+    <header>
+      <h2>🧭 {{ t('Explora', 'Explore', 'Explorar') }}</h2>
+      <button type="button" class="waze-cerrar" (click)="panel = null" [attr.aria-label]="t('Cerrar', 'Close', 'Fechar')">✕</button>
+    </header>
+    <div class="waze-pestanas" role="tablist">
+      @for (nivel of niveles; track nivel) {
+        <button type="button" role="tab" [class.activo]="nivelExplora === nivel" [attr.aria-selected]="nivelExplora === nivel"
+          (click)="nivelExplora = nivel; seleccionExplora = null">{{ nombreNivel(nivel) }}</button>
+      }
+    </div>
+    <div class="waze-grilla">
+      @for (nodo of lugaresExplora; track nodo.id) {
+        <div class="waze-tarjeta" [class.abierta]="seleccionExplora === nodo.id">
+          <button type="button" class="waze-tarjeta__imagen" (click)="seleccionExplora = seleccionExplora === nodo.id ? null : nodo.id">
+            @if (foto(nodo); as src) {
+              <img [src]="src" [alt]="nombre(nodo)" loading="lazy" />
+            } @else {
+              <img class="waze-icono waze-icono--grande" [src]="app.imagenIcono(nodo)" alt="" />
+            }
+            <strong>{{ nombre(nodo) }}</strong>
+          </button>
+          @if (seleccionExplora === nodo.id) {
+            <div class="waze-tarjeta__acciones">
+              <button type="button" (click)="verEnMapa(nodo)">🗺️ {{ t('Ver en el mapa', 'See on map', 'Ver no mapa') }}</button>
+              <button type="button" class="waze-principal" (click)="irA(nodo)">➜ {{ t('Ir aquí', 'Go here', 'Ir aqui') }}</button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </section>
+}
+
+@if (panel === 'tour') {
+  <section class="waze-panel" [attr.aria-label]="t('Tour virtual 360', '360 virtual tour', 'Tour virtual 360')">
+    <header>
+      <h2>🌐 {{ t('Tour virtual 360', '360 virtual tour', 'Tour virtual 360') }}</h2>
+      <button type="button" class="waze-cerrar" (click)="panel = null" [attr.aria-label]="t('Cerrar', 'Close', 'Fechar')">✕</button>
+    </header>
+    <p class="waze-nota">{{ t('Las miniaturas están en la app. El recorrido 360 se abre en el sitio del tour y necesita Internet.',
+      'Thumbnails are stored in the app. The 360 tour opens on the tour website and needs Internet.',
+      'As miniaturas estão no app. O tour 360 abre no site do tour e precisa de Internet.') }}</p>
+    <a class="waze-boton-tour" [href]="enlaceTour" target="_blank" rel="noopener noreferrer">▶ {{ t('Abrir el recorrido completo', 'Open the full tour', 'Abrir o tour completo') }}</a>
+    <div class="waze-grilla">
+      @for (escena of escenasTour; track escena.id) {
+        <a class="waze-tarjeta waze-tarjeta__imagen" [href]="escena.enlace" target="_blank" rel="noopener noreferrer">
+          @if (escena.miniatura) {
+            <img [src]="escena.miniatura" [alt]="escena.nombre" loading="lazy" />
+          } @else {
+            <img class="waze-icono waze-icono--grande" [src]="app.imagenIconoNombre(escena.nombre)" alt="" />
+          }
+          <strong>{{ escena.nombre }}</strong>
+          <small>{{ nombreNivel(escena.nivel) }}</small>
+        </a>
+      }
+    </div>
+  </section>
+}

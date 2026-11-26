@@ -1,0 +1,60 @@
+﻿Captura;Puntos asociados;Hora registrada;SSID;BSSID original;RSSI dBm;Canal original;Frecuencia MHz;Procedencia;Herramienta;Archivo fuente;Estado
+Hall;hall-nivel-1;11:33;movistar2,4GHZ_E23C58;e4:ab:89:e2:3c:58;-36;1;2412;Lista de redes;WiFi Analyzer;image(20261022-021922).png;Referencia de sector
+Hall;hall-nivel-1;11:33;Hippocampus;dc:9f:db:1c:ed:e3;-53;11;2462;Lista de redes;WiFi Analyzer;image(20261022-021922).png;Referencia de sector
+Hall;hall-nivel-1;11:33;Administracion;ee:9f:db:1c:ed:e3;-54;11;2462;Lista de redes;WiFi Analyzer;image(20261022-021922).png;Referencia de sector
+Hall;hall-nivel-1;11:33;HiddenSSID;fe:9f:db:1c:ed:e3;-54;11;2462;Lista de redes;WiFi Analyzer;image(20261022-021922).png;Referencia de sector
+Hall;hall-nivel-1;11:33;Minimarket;ec:08:6b:60:aa:ca;-63;9(7);2452;Lista de redes;WiFi Analyzer;image(20261022-021922).png;Referencia de sector
+Hall;hall-nivel-1;11:33;Admin_hippo;de:9f:db:f7:79:54;-75;1;2412;Lista de redes;WiFi Analyzer;image(20261022-021922).png;Referencia de sector
+Hall;hall-nivel-1;11:33;RRHH;c0:25:e9:32:33:26;-85;2(4);2417;Lista de redes;WiFi Analyzer;image(20261022-021922).png;Referencia de sector
+Hall;hall-nivel-1;11:33;Experiencia al Socio;00:24:01:fd:2e:5a;-86;11;2462;Lista de redes;WiFi Analyzer;image(20261022-021922).png;Referencia de sector
+Gimnasio;gimnasio-nivel-1;11:36;movistar2,4GHZ_E23C58;e4:ab:89:e2:3c:58;-91;1;2412;Lista de redes;WiFi Analyzer;image(20261022-021806).png;Referencia de sector
+Sector Alma Spa / Montemar;alma-spa-nivel-1 | salon-eventos-montemar-nivel-1;11:42;movistar2,4GHZ_E23C58;e4:ab:89:e2:3c:58;-38;1;2412;Lista de redes;WiFi Analyzer;image(20261022-021846).png;Referencia de sector
+Sector Alma Spa / Montemar;alma-spa-nivel-1 | salon-eventos-montemar-nivel-1;11:42;Administracion;ee:9f:db:1c:ed:e3;-74;11;2462;Lista de redes;WiFi Analyzer;image(20261022-021846).png;Referencia de sector
+Sector Alma Spa / Montemar;alma-spa-nivel-1 | salon-eventos-montemar-nivel-1;11:42;Hippocampus;dc:9f:db:1c:c6:aa;-84;6;2437;Lista de redes;WiFi Analyzer;image(20261022-021846).png;Referencia de sector
+Sector Alma Spa / Montemar;alma-spa-nivel-1 | salon-eventos-montemar-nivel-1;11:42;Hippocampus;dc:9f:db:1c:ed:e3;-74;11;2462;Lista de redes;WiFi Analyzer;image(20261022-021846).png;Referencia de sector
+Sector Alma Spa / Montemar;alma-spa-nivel-1 | salon-eventos-montemar-nivel-1;11:42;Admin_hippo;de:9f:db:1c:c6:a9;-78;6;2437;Lista de redes;WiFi Analyzer;image(20261022-021846).png;Referencia de sector
+Sector Alma Spa / Montemar;alma-spa-nivel-1 | salon-eventos-montemar-nivel-1;11:42;Redmi A3;52:fc:7f:57:0e:c5;-63;1;2412;Lista de redes;WiFi Analyzer;image(20261022-021846).png;Inventario, no comparar
+Sector Alma Spa / Montemar;alma-spa-nivel-1 | salon-eventos-montemar-nivel-1;11:42;809AB 2.4;58:d3:12:03:b2:7a;-85;10;2457;Lista de redes;WiFi Analyzer;image(20261022-021846).png;Referencia de sector
+Sector Alma Spa / Montemar;alma-spa-nivel-1 | salon-eventos-montemar-nivel-1;11:42;Admin_hippo;de:9f:db:1c:c6:aa;-85;6;2437;Lista de redes;WiFi Analyzer;image(20261022-021846).png;Referencia de sector
+Salón Altamar;salon-eventos-altamar-nivel-1;11:50;Admin_hippo;02:ec:da:1d:79:ea;-66;6;2437;Lista de redes;WiFi Analyzer;image(20261022-021727).png;Referencia de sector
+Salón Altamar;salon-eventos-altamar-nivel-1;11:50;WiFi_Mesh-170384;58:d3:12:03:84:1e;-73;1;2412;Lista de redes;WiFi Analyzer;image(20261022-021727).png;Referencia de sector
+Salón Altamar;salon-eventos-altamar-nivel-1;11:50;2301;dc:62:79:69:ed:b6;-88;9(7);2452;Lista de redes;WiFi Analyzer;image(20261022-021727).png;Referencia de sector
+Salón Altamar;salon-eventos-altamar-nivel-1;11:50;Hippocampus;78:8a:20:2a:95:6f;-83;6;2437;Lista de redes;WiFi Analyzer;image(20261022-021727).png;Referencia de sector
+Salón Altamar;salon-eventos-altamar-nivel-1;11:50;514AB 2.4;2c:b6:c2:26:33:2a;-70;1;2412;Lista de redes;WiFi Analyzer;image(20261022-021727).png;Referencia de sector
+Salón Altamar;salon-eventos-altamar-nivel-1;11:50;WiFi_Mesh-043813;0c:01:4b:85:c8:9c;-84;11;2462;Lista de redes;WiFi Analyzer;image(20261022-021727).png;Referencia de sector
+Salón Altamar;salon-eventos-altamar-nivel-1;11:50;614AB 2.4;;-49;11;2462;Gráfico aproximado;WiFi Analyzer;image(20261022-021727).png;Inventario, no comparar
+Sector Entrada / Recepciones / Ascensores nivel 4;entrada-nivel-4 | recepcion-turismo-vina-nivel-4 | recepcion-resort-nivel-4 | ascensor-central-nivel-4;12:08;Admin_hippo;fa:92:bf:cd:a3:2c;-69;6;2437;Lista de redes;WiFi Analyzer;image(20261022-021555).png;Referencia de sector
+Sector Entrada / Recepciones / Ascensores nivel 4;entrada-nivel-4 | recepcion-turismo-vina-nivel-4 | recepcion-resort-nivel-4 | ascensor-central-nivel-4;12:08;Hippocampus;f4:92:bf:cd:a3:2c;-70;6;2437;Lista de redes;WiFi Analyzer;image(20261022-021555).png;Referencia de sector
+Sector Entrada / Recepciones / Ascensores nivel 4;entrada-nivel-4 | recepcion-turismo-vina-nivel-4 | recepcion-resort-nivel-4 | ascensor-central-nivel-4;12:08;HiddenSSID;fe:9f:c2:aa:20:79;-64;11;2462;Lista de redes;WiFi Analyzer;image(20261022-021555).png;Referencia de sector
+Sector Entrada / Recepciones / Ascensores nivel 4;entrada-nivel-4 | recepcion-turismo-vina-nivel-4 | recepcion-resort-nivel-4 | ascensor-central-nivel-4;12:08;Admin_hippo;f6:9f:c2:aa:20:79;-65;11;2462;Lista de redes;WiFi Analyzer;image(20261022-021555).png;Referencia de sector
+Sector Entrada / Recepciones / Ascensores nivel 4;entrada-nivel-4 | recepcion-turismo-vina-nivel-4 | recepcion-resort-nivel-4 | ascensor-central-nivel-4;12:08;Administracion;fa:9f:c2:aa:20:79;-64;11;2462;Lista de redes;WiFi Analyzer;image(20261022-021555).png;Referencia de sector
+Sector Entrada / Recepciones / Ascensores nivel 4;entrada-nivel-4 | recepcion-turismo-vina-nivel-4 | recepcion-resort-nivel-4 | ascensor-central-nivel-4;12:08;HiddenSSID;8a:d7:9a:17:6c:6c;-93;1;2412;Lista de redes;WiFi Analyzer;image(20261022-021555).png;Referencia de sector
+Sector Entrada / Recepciones / Ascensores nivel 4;entrada-nivel-4 | recepcion-turismo-vina-nivel-4 | recepcion-resort-nivel-4 | ascensor-central-nivel-4;12:16;Admin_hippo;fa:92:bf:cd:a3:2c;-48;6;2437;Lista de redes;WiFi Analyzer;image(20261022-021447).png;Referencia de sector
+Sector Entrada / Recepciones / Ascensores nivel 4;entrada-nivel-4 | recepcion-turismo-vina-nivel-4 | recepcion-resort-nivel-4 | ascensor-central-nivel-4;12:16;Hippocampus;f4:92:bf:cd:a3:2c;-48;6;2437;Lista de redes;WiFi Analyzer;image(20261022-021447).png;Referencia de sector
+Sector Entrada / Recepciones / Ascensores nivel 4;entrada-nivel-4 | recepcion-turismo-vina-nivel-4 | recepcion-resort-nivel-4 | ascensor-central-nivel-4;12:16;Austral Home.;e4:ab:89:66:72:00;-87;6(8);2437;Lista de redes;WiFi Analyzer;image(20261022-021447).png;Referencia de sector
+Sector Entrada / Recepciones / Ascensores nivel 4;entrada-nivel-4 | recepcion-turismo-vina-nivel-4 | recepcion-resort-nivel-4 | ascensor-central-nivel-4;12:16;HiddenSSID;fe:9f:c2:aa:20:79;-82;11;2462;Lista de redes;WiFi Analyzer;image(20261022-021447).png;Referencia de sector
+Sector Entrada / Recepciones / Ascensores nivel 4;entrada-nivel-4 | recepcion-turismo-vina-nivel-4 | recepcion-resort-nivel-4 | ascensor-central-nivel-4;12:16;Administracion;fa:9f:c2:aa:20:79;-83;11;2462;Lista de redes;WiFi Analyzer;image(20261022-021447).png;Referencia de sector
+Sector Entrada / Recepciones / Ascensores nivel 4;entrada-nivel-4 | recepcion-turismo-vina-nivel-4 | recepcion-resort-nivel-4 | ascensor-central-nivel-4;12:16;HiddenSSID;6e:04:7a:6f:a1:3f;-86;6;2437;Lista de redes;WiFi Analyzer;image(20261022-021447).png;Referencia de sector
+Piscina temperada;piscina-temperada-nivel-3;12:20;Getnet_Faro;40:3f:8c:cb:33:08;-55;6(8);2437;Lista de redes;WiFi Analyzer;image(20261022-021402).png;Referencia de sector
+Piscina temperada;piscina-temperada-nivel-3;12:20;Administracion;ee:9f:db:f7:7a:0f;-60;1;2412;Lista de redes;WiFi Analyzer;image(20261022-021402).png;Referencia de sector
+Piscina temperada;piscina-temperada-nivel-3;12:20;Hippocampus;dc:9f:db:f7:7a:0f;-68;1;2412;Lista de redes;WiFi Analyzer;image(20261022-021402).png;Referencia de sector
+Piscina temperada;piscina-temperada-nivel-3;12:20;Admin_hippo;de:9f:db:f7:7a:0f;-65;1;2412;Lista de redes;WiFi Analyzer;image(20261022-021402).png;Referencia de sector
+Piscina temperada;piscina-temperada-nivel-3;12:20;1303AB 2.4;58:d3:12:6d:f6:4a;-86;1;2412;Lista de redes;WiFi Analyzer;image(20261022-021402).png;Referencia de sector
+Entrega de toallas;toallas-nivel-1;12:23;Getnet_Faro;40:3f:8c:cb:33:08;-83;6(8);2437;Lista de redes;WiFi Analyzer;image(20261022-021313).png;Referencia de sector
+Entrega de toallas;toallas-nivel-1;12:23;Administracion;ee:9f:db:1c:ed:e3;-72;11;2462;Lista de redes;WiFi Analyzer;image(20261022-021313).png;Referencia de sector
+Entrega de toallas;toallas-nivel-1;12:23;movistar2,4GHZ_E23C58;e4:ab:89:e2:3c:58;-45;1;2412;Lista de redes;WiFi Analyzer;image(20261022-021313).png;Referencia de sector
+Entrega de toallas;toallas-nivel-1;12:23;Hippocampus;dc:9f:db:1c:ed:e3;-78;11;2462;Lista de redes;WiFi Analyzer;image(20261022-021313).png;Referencia de sector
+Entrega de toallas;toallas-nivel-1;12:23;Admin_hippo;fa:92:bf:c4:8d:69;-80;6;2437;Lista de redes;WiFi Analyzer;image(20261022-021313).png;Referencia de sector
+Entrega de toallas;toallas-nivel-1;12:23;Admin_hippo;de:9f:db:f7:79:54;-87;1;2412;Lista de redes;WiFi Analyzer;image(20261022-021313).png;Referencia de sector
+Restaurante Faro;restaurant-faro-nivel-3;12:28;Getnet_Faro;40:3f:8c:cb:33:08;-28;6(8);2437;Lista de redes;WiFi Analyzer;image(20261022-021211).png;Referencia de sector
+Restaurante Faro;restaurant-faro-nivel-3;12:28;Administracion;ee:9f:db:f7:7a:0f;-50;1;2412;Lista de redes;WiFi Analyzer;image(20261022-021211).png;Referencia de sector
+Restaurante Faro;restaurant-faro-nivel-3;12:28;Hippocampus;dc:9f:db:f7:7a:0f;-53;1;2412;Lista de redes;WiFi Analyzer;image(20261022-021211).png;Referencia de sector
+Restaurante Faro;restaurant-faro-nivel-3;12:28;1303AB 2.4;58:d3:12:6d:f6:4a;-78;1;2412;Lista de redes;WiFi Analyzer;image(20261022-021211).png;Referencia de sector
+Restaurante Faro;restaurant-faro-nivel-3;12:28;1503AB 2.4;58:d3:12:03:a9:aa;-78;11;2462;Lista de redes;WiFi Analyzer;image(20261022-021211).png;Referencia de sector
+Restaurante Faro;restaurant-faro-nivel-3;12:28;1304AB 2.4;58:d3:12:03:7f:50;-85;6;2437;Lista de redes;WiFi Analyzer;image(20261022-021211).png;Referencia de sector
+Captura 11:57 · punto por asociar;;11:57;Administracion;ee:9f:db:1c:ed:e3;-87;11;2462;Lista de redes;WiFi Analyzer;image(20261022-021639).png;Punto por asociar
+Captura 11:57 · punto por asociar;;11:57;Administracion;06:92:bf:ca:f9:19;-72;11;2462;Lista de redes;WiFi Analyzer;image(20261022-021639).png;Punto por asociar
+Captura 11:57 · punto por asociar;;11:57;movistar2,4GHZ_884CEF;fe:12:63:2c:5d:88;-85;1;2412;Lista de redes;WiFi Analyzer;image(20261022-021639).png;Punto por asociar
+Captura 11:57 · punto por asociar;;11:57;Administracion;06:92:bf:ca:f9:26;-61;1;2412;Lista de redes;WiFi Analyzer;image(20261022-021639).png;Punto por asociar
+Captura 11:57 · punto por asociar;;11:57;Hippocampus;dc:9f:db:1c:ed:e3;-82;11;2462;Lista de redes;WiFi Analyzer;image(20261022-021639).png;Punto por asociar
+Captura 11:57 · punto por asociar;;11:57;HiddenSSID;16:5a:95:cb:6a:87;-88;4(6);2427;Lista de redes;WiFi Analyzer;image(20261022-021639).png;Punto por asociar
