@@ -1,0 +1,53 @@
+name: Publicar APK verificada
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publicar-apk-verificada.yml'
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: publicar-apk-verificada
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Descargar APK previamente compilada
+        run: |
+          gh run download 45742329528 --name NavInside-APK-actualizada --dir entrega
+
+      - name: Verificar integridad
+        working-directory: entrega
+        run: |
+          echo 'a76c28521dde54240a6ad5a9a5f57a87391c05f180c5ce4aff8958d10c62628f  NavInside-Actualizada-debug.apk' > SHA256SUMS.txt
+          sha256sum --check SHA256SUMS.txt
+
+      - name: Publicar descarga en Releases
+        run: |
+          cat > notas.md <<'NOTAS'
+          APK Android de pruebas de NavInside Hippocampus.
+
+          Incluye la integración del posicionamiento de Cristian, la vista doble con fotografías y los recorridos accesibles del nivel 3 hacia las canchas de tenis, la piscina principal y la piscina temperada.
+
+          Validación del código integrado: 189 pruebas aprobadas, lint, comprobación de mapas y compilación web. APK compilada mediante GitHub Actions (ejecución 45742329528) desde el commit 18a7011bba07ceb9bd7cfdf956f287fd5dd29ef5.
+
+          Sigue pendiente comprobar la precisión del posicionamiento caminando en el recinto e incorporar las muestras de recorridos Wi-Fi: el mapa de radio incluido en el código no contiene esas muestras.
+
+          Instalación: descargar NavInside-Actualizada-debug.apk y abrirlo en Android. Esta APK usa una firma de pruebas distinta a la APK original de Cristian. Si Android rechaza la actualización, primero exportar cualquier muestra Wi-Fi guardada en la aplicación anterior y después desinstalarla para instalar esta versión. La desinstalación elimina los datos locales.
+
+          Se adjunta SHA256SUMS.txt para verificar la integridad de la descarga.
+          NOTAS
+          if ! gh release view navinside-2026.11.25 >/dev/null 2>&1; then
+            gh release create navinside-2026.11.25 --target 18a7011bba07ceb9bd7cfdf956f287fd5dd29ef5 --title "NavInside · APK con rutas accesibles · 25-11-2026" --notes-file notas.md --prerelease
+          fi
+          gh release upload navinside-2026.11.25 entrega/NavInside-Actualizada-debug.apk entrega/SHA256SUMS.txt
