@@ -1,0 +1,158 @@
+:host {
+  display: block;
+}
+
+.nav-wifi {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+  margin: 12px 0;
+  padding: 14px;
+  border: 1px solid #c8d6e8;
+  border-radius: 14px;
+  background: #f5f9ff;
+  color: #17345c;
+  font-size: 14px;
+}
+
+.nav-wifi__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+  }
+}
+
+.nav-wifi__boton {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: #17345c;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+.nav-wifi__boton--activo {
+  background: #12813f;
+}
+
+.nav-wifi__boton--secundario {
+  background: #e3ebf6;
+  color: #17345c;
+}
+
+.nav-wifi__posicion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-weight: 600;
+}
+
+.nav-wifi__punto {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #f0a43a;
+  flex: none;
+}
+
+.nav-wifi__punto--firme {
+  background: #12a150;
+}
+
+.nav-wifi__aviso {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fff4e0;
+  color: #7a4a06;
+}
+
+.nav-wifi__nota {
+  margin: 0;
+  font-size: 13px;
+  color: #35506f;
+}
+
+.nav-wifi__mensaje {
+  margin: 0;
+  color: #12613a;
+}
+
+.nav-wifi__detalle {
+  summary {
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  dl {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+    margin: 8px 0 0;
+  }
+
+  dt {
+    margin-top: 6px;
+    font-weight: 600;
+  }
+
+  dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+.nav-wifi__ayuda {
+  margin: 8px 0;
+}
+
+.nav-wifi__campo {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+
+  select {
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+    max-width: 100%;
+  }
+}
+
+.nav-wifi__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.nav-wifi__grabando {
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #e5f6ec;
+}
+
+.nav-wifi__texto {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 6px;
+  font-family: monospace;
+  font-size: 11px;
+}

@@ -98,6 +98,11 @@ export class RutaService {
           modoAccesible
         );
 
+    const costoReferencia = conexionesDisponibles.reduce(
+      (costo, conexion) => costo + (conexion.distancia ?? 0),
+      1
+    );
+
     const abiertos =
       new Set<string>(
         [origenId]
@@ -185,7 +190,8 @@ export class RutaService {
         this.obtenerVecinos(
           actual,
           conexionesDisponibles,
-          modoAccesible
+          modoAccesible,
+          costoReferencia
         );
 
       for (
@@ -199,7 +205,7 @@ export class RutaService {
             ) ??
             Infinity
           ) +
-          vecino.distancia;
+          vecino.costo;
 
         if (
           nuevoCosto <
@@ -260,7 +266,7 @@ export class RutaService {
           ruta[i + 1].id
         );
 
-      if (!conexion) {
+      if (!conexion || conexion.distancia === null) {
         return Infinity;
       }
 
@@ -317,6 +323,15 @@ export class RutaService {
           nodoSiguiente.nivel;
 
       if (cambioNivel) {
+        let direccionNivel: DireccionNivel =
+          nodoSiguiente.nivel! > nodoActual.nivel! ? 'subir' : 'bajar';
+
+        if (conexion?.direccionIda) {
+          direccionNivel = conexion.origen === nodoActual.id
+            ? conexion.direccionIda
+            : conexion.direccionIda === 'subir' ? 'bajar' : 'subir';
+        }
+
         pasos.push({
           orden:
             pasos.length + 1,
@@ -328,11 +343,7 @@ export class RutaService {
             nodoSiguiente,
           medio:
             conexion?.tipo,
-          direccionNivel:
-            nodoSiguiente.nivel! >
-            nodoActual.nivel!
-              ? 'subir'
-              : 'bajar'
+          direccionNivel
         });
 
         continue;
@@ -370,16 +381,6 @@ export class RutaService {
     _origenId: string,
     _destinoId: string
   ): number {
-    /*
-     * Las coordenadas son esquemáticas
-     * y no están a escala.
-     *
-     * Una heurística igual a cero
-     * hace que A* funcione como
-     * Dijkstra y garantiza que la
-     * ruta se decida exclusivamente
-     * por las mediciones reales.
-     */
     return 0;
   }
 
@@ -433,14 +434,15 @@ export class RutaService {
     nodoId: string,
     conexionesDisponibles:
       Conexion[],
-    modoAccesible: boolean
+    modoAccesible: boolean,
+    costoReferencia: number
   ): {
     id: string;
-    distancia: number;
+    costo: number;
   }[] {
     const vecinos: {
       id: string;
-      distancia: number;
+      costo: number;
     }[] = [];
 
     for (
@@ -497,8 +499,8 @@ export class RutaService {
       vecinos.push({
         id:
           vecinoId,
-        distancia:
-          conexion.distancia
+        costo:
+          conexion.distancia ?? costoReferencia
       });
     }
 

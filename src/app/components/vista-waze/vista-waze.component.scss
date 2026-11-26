@@ -1,0 +1,249 @@
+:host {
+  --azul: #17345c;
+  --celeste: #33ccff;
+  --borde: #e2e6ec;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: #1d2733;
+}
+
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { opacity: .45; cursor: default; }
+
+.waze-boton-menu, .waze-redondo {
+  position: fixed; z-index: 30; border: 0; background: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .22);
+}
+
+.waze-boton-menu {
+  top: calc(12px + env(safe-area-inset-top)); left: 12px; width: 52px; height: 52px; border-radius: 14px;
+  display: grid; place-content: center; gap: 5px;
+  span { display: block; width: 22px; height: 2.5px; border-radius: 2px; background: #1d2733; }
+}
+
+.waze-derecha {
+  position: fixed; z-index: 30; top: calc(12px + env(safe-area-inset-top)); right: 12px;
+  display: grid; gap: 12px; justify-items: center;
+}
+.waze-derecha .waze-redondo { position: static; }
+.waze-boton-menu--bajo, .waze-derecha--bajo { top: calc(96px + env(safe-area-inset-top)); }
+
+.waze-redondo {
+  width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 24px; color: var(--azul);
+}
+.waze-redondo--navinside { overflow: hidden; padding: 4px; }
+.waze-redondo--navinside img { width: 42px; height: 42px; object-fit: contain; border-radius: 50%; }
+
+.waze-wifi {
+  font-size: 18px; background: #fff3d6; border-radius: 12px; padding: 4px 8px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, .2);
+}
+.waze-wifi--firme { background: #dff6e7; }
+
+.waze-planos {
+  position: fixed; z-index: 31; top: calc(76px + env(safe-area-inset-top)); right: 72px; width: min(240px, calc(100vw - 96px));
+  background: #fff; border-radius: 16px; padding: 8px; box-shadow: 0 6px 24px rgba(0, 0, 0, .25);
+  p { margin: 6px 10px; font-size: 12px; color: #667; font-weight: 600; }
+  button {
+    display: block; width: 100%; text-align: left; border: 0; background: none; padding: 11px 12px; border-radius: 10px; font-size: 15px;
+    &.activo { background: #e8f3ff; color: var(--azul); font-weight: 700; }
+  }
+}
+
+.waze-instruccion {
+  position: fixed; z-index: 29; top: 0; left: 0; right: 0; height: calc(78px + env(safe-area-inset-top)); box-sizing: border-box;
+  padding: calc(8px + env(safe-area-inset-top)) 16px 8px;
+  display: flex; gap: 12px; align-items: center; background: #1e8e5a; color: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .25); overflow: hidden;
+}
+.waze-instruccion__flecha { font-size: 30px; }
+.waze-instruccion__texto {
+  min-width: 0;
+  strong {
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    font-size: 15px; line-height: 1.25;
+  }
+  small { display: block; opacity: .9; font-size: 12px; margin-top: 2px; }
+}
+
+.waze-hoja {
+  position: fixed; z-index: 28; left: 0; right: 0; bottom: 0; height: var(--waze-hoja, 380px);
+  overflow-y: auto; overscroll-behavior: contain;
+  background: #fff; border-radius: 22px 22px 0 0; box-shadow: 0 -4px 18px rgba(0, 0, 0, .14);
+  padding: 0 16px calc(14px + env(safe-area-inset-bottom));
+  transition: height .25s ease;
+}
+.waze-hoja--arrastrando { transition: none; }
+
+.waze-hoja__asa {
+  position: sticky; top: 0; z-index: 2; display: block; width: calc(100% + 32px); margin: 0 -16px 6px; height: 28px;
+  border: 0; background: #fff; touch-action: none; cursor: grab;
+  &::before { content: ''; position: absolute; left: 50%; top: 11px; width: 44px; height: 5px; margin-left: -22px; border-radius: 3px; background: #b8bec7; }
+}
+.waze-puntos { margin-top: 12px; }
+.waze-puntos__titulo { margin: 0 2px 8px; font-size: 16px; font-weight: 700; }
+.waze-puntos__tira { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; }
+.waze-punto {
+  flex: none; width: 118px; padding: 0; border: 0; border-radius: 14px; overflow: hidden; background: #eef1f5; text-align: left;
+  img, .waze-punto__icono { display: grid; place-items: center; width: 118px; height: 78px; object-fit: cover; }
+  .waze-punto__icono { font-size: 34px; background: #e1e6ee; }
+  strong { display: block; padding: 7px 8px 9px; font-size: 13px; line-height: 1.2; }
+  &.activo { box-shadow: 0 0 0 2px #2a7de1; }
+}
+
+.waze-buscar {
+  display: flex; align-items: center; gap: 10px; background: #f1f3f6; border-radius: 26px; padding: 4px 6px 4px 16px;
+  input { flex: 1; min-width: 0; border: 0; background: none; font-size: 17px; padding: 12px 0; outline: none; color: #1d2733; }
+}
+
+.waze-microfono {
+  width: 46px; height: 46px; border-radius: 50%; border: 0; background: none; font-size: 22px;
+  &.activo { background: #ffe1e1; animation: latido 1s infinite; }
+}
+
+@keyframes latido { 50% { transform: scale(1.08); } }
+
+.waze-estado { margin: 8px 4px 0; font-size: 14px; color: #3c4a5c; }
+
+.waze-chips {
+  display: flex; gap: 10px; margin: 14px 0 6px; overflow-x: auto;
+  button {
+    flex: none; display: flex; gap: 6px; align-items: center; max-width: 60vw;
+    padding: 12px 16px; border-radius: 14px; border: 1px solid var(--borde); background: #fff; font-size: 15px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    &.activo { border-color: #2a7de1; background: #e8f3ff; color: #1c5fb0; }
+  }
+}
+
+.waze-campos { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+.waze-campos__lista { flex: 1; min-width: 0; display: grid; gap: 6px; }
+.waze-campo {
+  display: flex; gap: 10px; align-items: center; text-align: left; padding: 10px 12px;
+  border: 1px solid var(--borde); border-radius: 12px; background: #fff; font-size: 15px;
+  span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  &.activo { border-color: #2a7de1; box-shadow: 0 0 0 2px #cfe3fb; }
+}
+.waze-campo__punto { flex: none; width: 12px; height: 12px; border-radius: 50%; background: #e0463a; }
+.waze-campo__punto--origen { background: #2a7de1; }
+.waze-intercambiar { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--borde); background: #fff; font-size: 18px; }
+
+.waze-resultados { margin-top: 10px; }
+.waze-resultados__nivel { margin: 14px 4px 4px; font-size: 13px; font-weight: 700; color: #667; text-transform: uppercase; letter-spacing: .03em; }
+
+.waze-lugar {
+  display: flex; gap: 12px; align-items: center; width: 100%; text-align: left;
+  padding: 8px 4px; border: 0; border-bottom: 1px solid #f0f2f5; background: none;
+  img { width: 46px; height: 46px; border-radius: 12px; object-fit: cover; flex: none; }
+}
+.waze-lugar__texto { min-width: 0; strong, small { display: block; } small { color: #667; } }
+
+.waze-icono {
+  flex: none; width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center;
+  background: #e8f1fb; font-size: 24px;
+}
+.waze-icono--grande { width: 100%; height: 96px; font-size: 40px; border-radius: 12px 12px 0 0; }
+
+.waze-opciones {
+  margin-top: 16px;
+  > p { margin: 0 4px 6px; font-size: 14px; color: #556; }
+}
+.waze-opcion {
+  display: flex; gap: 14px; align-items: center; width: 100%; text-align: left; padding: 12px 4px;
+  border: 0; border-bottom: 1px solid #f0f2f5; background: none;
+  strong, small { display: block; } small { color: #667; }
+}
+.waze-opcion__icono { font-size: 26px; width: 36px; text-align: center; }
+
+.waze-tour-tira {
+  display: flex; gap: 10px; overflow-x: auto; padding: 10px 2px 4px;
+  button { flex: none; width: 116px; border: 0; padding: 0; background: none; text-align: left; font-size: 12px; }
+  img { width: 116px; height: 72px; object-fit: cover; border-radius: 10px; display: block; }
+  span { display: block; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+.waze-ruta__destino {
+  display: flex; gap: 12px; align-items: center;
+  img { width: 52px; height: 52px; border-radius: 12px; object-fit: cover; flex: none; }
+  > div { flex: 1; min-width: 0; }
+  strong { display: block; font-size: 17px; }
+  small { display: block; color: #667; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+.waze-ruta__acciones {
+  display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;
+  button { flex: 1 0 auto; min-height: 46px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--borde); background: #fff; font-weight: 600; }
+  button.activo { background: #dff6e7; border-color: #1e8e5a; }
+}
+.waze-principal { background: var(--celeste) !important; border-color: var(--celeste) !important; color: #06233f !important; }
+
+.waze-enlace { margin-top: 10px; border: 0; background: none; color: #1c5fb0; font-weight: 600; padding: 6px 0; }
+
+.waze-cerrar { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 0; background: #f1f3f6; font-size: 16px; }
+
+.waze-velo { position: fixed; inset: 0; z-index: 40; background: rgba(10, 20, 35, .45); }
+.waze-cajon {
+  position: fixed; z-index: 41; top: 0; bottom: 0; left: 0; width: min(330px, 86vw); overflow-y: auto;
+  background: #fff; padding: calc(16px + env(safe-area-inset-top)) 14px 24px; box-shadow: 4px 0 24px rgba(0, 0, 0, .25);
+  > button {
+    display: block; width: 100%; text-align: left; border: 0; background: none; padding: 13px 10px; border-radius: 10px; font-size: 16px;
+    &:active { background: #f1f3f6; }
+  }
+}
+.waze-cajon__cabecera {
+  display: flex; gap: 12px; align-items: center; margin-bottom: 8px;
+  img { border-radius: 10px; }
+  div { flex: 1; } strong, small { display: block; } small { color: #667; }
+}
+.waze-marcas {
+  position: fixed; z-index: 29; top: calc(16px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+  max-width: calc(100vw - 150px); display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px;
+  background: rgba(255, 255, 255, .96); border-radius: 22px; box-shadow: 0 2px 10px rgba(0, 0, 0, .18);
+  img { border-radius: 8px; flex: none; }
+  strong { font-size: 14px; color: var(--azul); white-space: nowrap; }
+}
+.waze-marcas__separador { width: 1px; height: 22px; background: #d5dbe3; flex: none; }
+.waze-marcas__resort { height: 28px; width: 28px; object-fit: contain; border-radius: 50% !important; }
+.waze-cajon__logo { width: 44px; height: 44px; object-fit: contain; border-radius: 50% !important; background: #fff; }
+.waze-cajon__titulo { margin: 16px 10px 6px; font-size: 12px; font-weight: 700; color: #667; text-transform: uppercase; letter-spacing: .04em; }
+.waze-idiomas {
+  display: grid; gap: 6px;
+  button {
+    display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 10px; border: 1px solid var(--borde); background: #fff; font-size: 15px;
+    &.activo { border-color: #2a7de1; background: #e8f3ff; font-weight: 700; }
+  }
+}
+.waze-salir { color: #b3261e; }
+
+.waze-panel {
+  position: fixed; z-index: 35; inset: 0; overflow-y: auto; background: #f6f8fb;
+  padding: calc(14px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  h2 { margin: 0; font-size: 21px; }
+}
+.waze-pestanas {
+  display: flex; gap: 8px; overflow-x: auto; margin: 14px 0;
+  button {
+    flex: none; padding: 9px 14px; border-radius: 20px; border: 1px solid var(--borde); background: #fff; font-weight: 600;
+    &.activo { background: var(--azul); color: #fff; border-color: var(--azul); }
+  }
+}
+.waze-grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 12px; }
+.waze-tarjeta {
+  background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 6px rgba(0, 0, 0, .1);
+  text-decoration: none; color: inherit;
+}
+.waze-tarjeta__imagen {
+  display: block; width: 100%; border: 0; padding: 0 0 10px; background: #fff; text-align: left;
+  img { width: 100%; height: 96px; object-fit: cover; display: block; }
+  strong, small { display: block; padding: 0 10px; } strong { margin-top: 8px; font-size: 14px; } small { color: #667; }
+}
+.waze-tarjeta__acciones {
+  display: grid; gap: 6px; padding: 0 10px 10px;
+  button { min-height: 40px; border-radius: 10px; border: 1px solid var(--borde); background: #fff; font-weight: 600; }
+}
+.waze-nota { color: #556; font-size: 14px; }
+.waze-boton-tour {
+  display: inline-block; padding: 12px 18px; border-radius: 12px; background: var(--celeste); color: #06233f; font-weight: 700; text-decoration: none;
+}
+
+img.waze-icono { object-fit: cover; padding: 0; }
+img.waze-icono--grande, img.waze-punto__icono { display: block !important; object-fit: contain !important; padding: 12px 0; background: #eef2f7; box-sizing: border-box; }

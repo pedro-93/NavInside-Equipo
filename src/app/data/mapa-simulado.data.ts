@@ -1,14 +1,12 @@
+import { integrarMedicionesLevantadas } from './levantamiento-recorridos.data';
 import {
   Conexion,
   LugarPlano,
   MapaNavegacion,
   Nodo
 } from '../models/nodo.model';
+import { CONEXIONES_COMPLEMENTARIAS, NODOS_COMPLEMENTARIOS } from './ampliacion-hippocampus.data';
 
-/*
- * Coordenadas esquemáticas para visualizar el grafo.
- * Las distancias navegables provienen del levantamiento en terreno.
- */
 export const NODOS_HIPPOCAMPUS: Nodo[] = [
   {
     id: 'entrada-nivel-4',
@@ -259,7 +257,7 @@ export const NODOS_HIPPOCAMPUS: Nodo[] = [
   },
   {
     id: 'puerta-acceso-tinajas-piso-6',
-    nombre: 'Tinajas / Puerta de Acceso',
+    nombre: 'Puerta al final del pasillo · Tinajas',
     x: 6,
     y: 0,
     tipo: 'spa',
@@ -268,16 +266,17 @@ export const NODOS_HIPPOCAMPUS: Nodo[] = [
   },
   {
     id: 'alma-spa-tinaja-piso-6',
-    nombre: 'Alma Spa Tinaja',
+    nombre: 'Alma Spa Masajes y Sauna',
     x: 8,
     y: 0,
     tipo: 'spa',
     nivel: 6,
     restringido: false
-  }
+  },
+  ...NODOS_COMPLEMENTARIOS
 ];
 
-export const CONEXIONES_HIPPOCAMPUS: Conexion[] = [
+const CONEXIONES_BASE_HIPPOCAMPUS: Conexion[] = [
   {
     origen: 'entrada-nivel-4',
     destino: 'recepcion-turismo-vina-nivel-4',
@@ -342,15 +341,6 @@ export const CONEXIONES_HIPPOCAMPUS: Conexion[] = [
   {
     origen: 'ascensor-central-nivel-4',
     destino: 'ascensor-central-nivel-3',
-    distancia: 0,
-    tipo: 'ascensor',
-    accesible: true,
-    restringida: false,
-    habilitada: true
-  },
-  {
-    origen: 'ascensor-central-nivel-4',
-    destino: 'ascensor-central-nivel-1',
     distancia: 0,
     tipo: 'ascensor',
     accesible: true,
@@ -513,10 +503,16 @@ export const CONEXIONES_HIPPOCAMPUS: Conexion[] = [
     tipo: 'pasillo',
     restringida: false,
     habilitada: true
-  }
+  },
+  ...CONEXIONES_COMPLEMENTARIAS
 ];
 
-export const LUGARES_HIPPOCAMPUS_PRELIMINARES: LugarPlano[] =
+export const CONEXIONES_HIPPOCAMPUS: Conexion[] = integrarMedicionesLevantadas(
+  CONEXIONES_BASE_HIPPOCAMPUS,NODOS_HIPPOCAMPUS.map(n=>n.id)
+);
+
+export const LUGARES_HIPPOCAMPUS_PRELIMINARES:
+  LugarPlano[] =
   NODOS_HIPPOCAMPUS.map(nodo => ({
     id: nodo.id,
     nombre: nodo.nombre,
@@ -533,12 +529,14 @@ export const LUGARES_HIPPOCAMPUS_PRELIMINARES: LugarPlano[] =
         : 'confirmado'
   }));
 
-export const MAPA_ACTIVO: MapaNavegacion = {
+export const MAPA_ACTIVO:
+  MapaNavegacion = {
   id: 'hippocampus-resort',
   nombre: 'Hippocampus Resort & Club',
   descripcion:
-    'Grafo de referencia construido con mediciones realizadas en terreno.',
+    'Grafo construido con mediciones en terreno y accesos de referencia pendientes de medir.',
   estado: 'referencia',
   nodos: NODOS_HIPPOCAMPUS,
-  conexiones: CONEXIONES_HIPPOCAMPUS
+  conexiones:
+    CONEXIONES_HIPPOCAMPUS
 };

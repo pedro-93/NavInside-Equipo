@@ -1,37 +1,142 @@
-/*
- * App Global CSS
- * ----------------------------------------------------------------------------
- * Put style rules here that you want to apply globally. These styles are for
- * the entire app and not just one component. Additionally, this file can be
- * used as an entry point to import other CSS/Sass files to be included in the
- * output CSS.
- * For more information on global stylesheets, visit the documentation:
- * https://ionicframework.com/docs/layout/global-stylesheets
- */
 
-/* Core CSS required for Ionic components to work properly */
 @import "@ionic/angular/css/core.css";
 
-/* Basic CSS for apps built with Ionic */
 @import "@ionic/angular/css/normalize.css";
 @import "@ionic/angular/css/structure.css";
 @import "@ionic/angular/css/typography.css";
 @import "@ionic/angular/css/display.css";
 
-/* Optional CSS utils that can be commented out */
 @import "@ionic/angular/css/padding.css";
 @import "@ionic/angular/css/float-elements.css";
 @import "@ionic/angular/css/text-alignment.css";
 @import "@ionic/angular/css/text-transformation.css";
 @import "@ionic/angular/css/flex-utils.css";
 
-/**
- * Ionic Dark Mode
- * -----------------------------------------------------
- * For more info, please see:
- * https://ionicframework.com/docs/theming/dark-mode
- */
-
-/* @import "@ionic/angular/css/palettes/dark.always.css"; */
-/* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import '@ionic/angular/css/palettes/dark.system.css';
+
+.mapa-interactivo-iframe {
+  display: block;
+  width: 100%;
+  height: 900px;
+  border: 0;
+  border-radius: 18px;
+  background: #e8edf0;
+}
+
+.mapa-interactivo-iframe.mapa-interactivo-iframe--guiado {
+  height: clamp(480px, 78vh, 800px);
+}
+
+.puntos-interes__nota {
+  margin: 0;
+  padding: 14px 18px;
+  border-left: 4px solid #306799;
+  border-radius: 10px;
+  background: #fff;
+  color: #10264a;
+  line-height: 1.5;
+}
+
+@media (max-width: 520px) {
+  .mapa-interactivo-iframe {
+    height: 820px;
+    border-radius: 12px;
+  }
+}
+
+.barra-superior__marcas {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.barra-superior__marca-resort {
+  display: block;
+  width: 42px;
+  height: 50px;
+  padding: 2px;
+  border: 1px solid rgba(22, 50, 112, 0.16);
+  border-radius: 6px;
+  background: #fff;
+  object-fit: contain;
+}
+
+.controles-aplicacion { position:sticky;top:0;z-index:12;display:flex;gap:8px;background:#f5f8fc;padding:8px;border-radius:12px;margin:8px 0; }
+.controles-aplicacion button.boton-menu { min-height:44px;min-width:0;justify-content:center;padding:10px;flex-shrink:0; }
+.controles-aplicacion button.controles-aplicacion__ubicacion { flex:1;background:#075c75;color:#fff;border:1px solid #06475b; }
+.controles-aplicacion button:focus-visible { outline:3px solid #e29d28;outline-offset:2px; }
+.controles-aplicacion button:disabled { opacity:0.6;cursor:wait; }
+.ubicacion-manual { display:grid;gap:8px;margin:12px 0; }
+.ubicacion-manual select,.ubicacion-manual button { min-height:44px;padding:8px;max-width:100%; }
+.inventario-levantamiento { margin-top:16px; }
+.inventario-levantamiento summary { cursor:pointer;min-height:36px;font-weight:700; }
+.tabla-levantamiento { overflow-x:auto; }
+.tabla-levantamiento table { width:100%;border-collapse:collapse;font-size:0.85rem; }
+.tabla-levantamiento th,.tabla-levantamiento td { padding:8px;border-bottom:1px solid #c9d7e8;text-align:left;vertical-align:top; }
+.tabla-levantamiento small { display:block;min-width:160px; }
+
+#inicio,#puntos-interes,#navegacion,#ubicacion-actual,.inicio-hippocampus__mapa { scroll-margin-top:80px; }
+
+.modo-mapa > :not(.inicio-hippocampus__mapa):not(app-vista-waze) {
+  display: none !important;
+}
+
+.modo-mapa .inicio-hippocampus__mapa {
+  position: fixed !important;
+  inset: 0 0 var(--waze-hoja, 210px) 0;
+  z-index: auto;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  max-width: none !important;
+  background: #e9eef3;
+}
+
+.modo-mapa .inicio-hippocampus__mapa > :not(.mapa-con-tour):not(.foto-llegada-overlay):not(.foto-galeria-overlay) {
+  display: none !important;
+}
+
+.modo-mapa .mapa-con-tour,
+.modo-mapa .mapa-con-tour__plano {
+  display: block !important;
+  height: 100% !important;
+  margin: 0 !important;
+}
+
+.modo-mapa .mapa-con-tour__vista {
+  display: none !important;
+}
+
+.modo-mapa .mapa-interactivo-iframe,
+.modo-mapa .vista-resort-completo,
+.modo-mapa app-mapa-ruta {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+.modo-mapa .vista-resort-completo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.volver-vista-mapa {
+  position: fixed;
+  z-index: 50;
+  right: 14px;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 24px;
+  background: #33ccff;
+  color: #06233f;
+  font-weight: 700;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
+}
+
+.modo-mapa.con-ruta .inicio-hippocampus__mapa {
+  top: calc(78px + env(safe-area-inset-top)) !important;
+}

@@ -33,8 +33,11 @@ export type TipoNodo =
 export interface Conexion {
   origen: string;
   destino: string;
-  distancia: number;
+  distancia: number | null;
+  /** Longitud estimada desde el plano; no equivale a una medición en terreno. */
+  estimada?: boolean;
   tipo?: TipoConexion;
+  direccionIda?: 'subir' | 'bajar';
   accesible?: boolean;
   restringida?: boolean;
   habilitada?: boolean;
@@ -44,7 +47,8 @@ export type TipoConexion =
   | 'pasillo'
   | 'ascensor'
   | 'escalera'
-  | 'rampa';
+  | 'rampa'
+  | 'acceso';
 
 export interface LugarPlano {
   id: string;

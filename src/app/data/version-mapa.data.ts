@@ -4,15 +4,18 @@ import {
 
 export const VERSION_MAPA_ACTUAL:
   VersionMapa = {
-    id: 'hippocampus-simulado',
-    version: '0.1.0',
-    fechaActualizacion: '2026-08-25',
-    estado: 'simulado',
+    id: 'hippocampus-resort',
+    version: '0.3.0',
+    fechaActualizacion: '2026-10-31',
+    estado: 'preliminar',
     nivelesDisponibles: [
       1,
-      3
+      3,
+      4,
+      5,
+      6
     ],
     origenDatos:
-      'Plano de orientación preliminar y datos simulados',
+      'Mediciones de terreno y respaldo local de referencia',
     requiereInternet: false
   };

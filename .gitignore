@@ -68,3 +68,12 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Local packages and device-specific configuration
+*.apk
+*.aab
+*.jks
+*.keystore
+.env
+.env.*
+!.env.example

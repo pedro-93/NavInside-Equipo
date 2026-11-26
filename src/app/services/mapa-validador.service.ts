@@ -202,13 +202,11 @@ export class MapaValidadorService {
       }
 
       if (
-        !Number.isFinite(
-          conexion.distancia
-        ) ||
-        conexion.distancia < 0 ||
+        conexion.distancia !== null &&
         (
-          conexion.distancia === 0 &&
-          conexion.tipo !== 'ascensor'
+          !Number.isFinite(conexion.distancia) ||
+          conexion.distancia < 0 ||
+          (conexion.distancia === 0 && conexion.tipo !== 'ascensor')
         )
       ) {
         this.agregarProblema(
@@ -293,7 +291,8 @@ export class MapaValidadorService {
       TipoConexion[] = [
         'ascensor',
         'escalera',
-        'rampa'
+        'rampa',
+        'acceso'
       ];
 
     if (
@@ -306,7 +305,7 @@ export class MapaValidadorService {
         problemas,
         'CONEXION_MULTINIVEL_INVALIDA',
         'error',
-        `La conexión entre "${origen.id}" y "${destino.id}" cambia de nivel sin utilizar ascensor, escalera o rampa.`
+        `La conexión entre "${origen.id}" y "${destino.id}" cambia de nivel sin un acceso registrado.`
       );
     }
   }

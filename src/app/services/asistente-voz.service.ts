@@ -1,5 +1,9 @@
 import { Injectable } from '@angular/core';
-import { Capacitor, PluginListenerHandle, registerPlugin } from '@capacitor/core';
+import {
+  Capacitor,
+  PluginListenerHandle,
+  registerPlugin
+} from '@capacitor/core';
 
 import { Idioma } from './idioma.service';
 
@@ -37,12 +41,14 @@ interface ReconocimientoNavegador {
   stop(): void;
 }
 
-type ConstructorReconocimiento = new () => ReconocimientoNavegador;
+type ConstructorReconocimiento =
+  new () => ReconocimientoNavegador;
 
-type NavegadorConReconocimiento = typeof globalThis & {
-  SpeechRecognition?: ConstructorReconocimiento;
-  webkitSpeechRecognition?: ConstructorReconocimiento;
-};
+type NavegadorConReconocimiento =
+  typeof globalThis & {
+    SpeechRecognition?: ConstructorReconocimiento;
+    webkitSpeechRecognition?: ConstructorReconocimiento;
+  };
 
 interface ResultadoVozNativo {
   transcript?: string;
@@ -51,16 +57,35 @@ interface ResultadoVozNativo {
 }
 
 interface ReconocimientoVozNativo {
-  start(options: { language: string }): Promise<void>;
+  start(options: {
+    language: string;
+  }): Promise<void>;
+
   stop(): Promise<void>;
+
   addListener(
     eventName: string,
     listener: (event: ResultadoVozNativo) => void
   ): Promise<PluginListenerHandle>;
 }
 
-const RECONOCIMIENTO_NATIVO = registerPlugin<ReconocimientoVozNativo>(
-  'NavInsideSpeechRecognition'
+const RECONOCIMIENTO_NATIVO =
+  registerPlugin<ReconocimientoVozNativo>(
+    'NavInsideSpeechRecognition'
+  );
+
+interface LecturaVozNativa {
+  speak(options: {
+    text: string;
+    language: string;
+    rate: number;
+  }): Promise<void>;
+
+  stop(): Promise<void>;
+}
+
+const LECTURA_NATIVA = registerPlugin<LecturaVozNativa>(
+  'NavInsideTextToSpeech'
 );
 
 @Injectable({
@@ -68,13 +93,26 @@ const RECONOCIMIENTO_NATIVO = registerPlugin<ReconocimientoVozNativo>(
 })
 export class AsistenteVozService {
   private secuencia = 0;
-  private reconocimiento: ReconocimientoNavegador | null = null;
+  private hablandoNativo = false;
+  private lecturaNativaPendiente: Promise<void> =
+    Promise.resolve();
+
+  private reconocimiento: ReconocimientoNavegador | null =
+    null;
+
   private reconocimientoNativoActivo = false;
+
   private listenersNativos: PluginListenerHandle[] = [];
 
   get disponible(): boolean {
-    return this.obtenerSintetizador() !== null &&
-      typeof SpeechSynthesisUtterance !== 'undefined';
+    if (this.usarLecturaNativa()) {
+      return true;
+    }
+
+    return (
+      this.obtenerSintetizador() !== null &&
+      typeof SpeechSynthesisUtterance !== 'undefined'
+    );
   }
 
   get reconocimientoDisponible(): boolean {
@@ -86,18 +124,51 @@ export class AsistenteVozService {
       return false;
     }
 
-    const hostLocal = ['localhost', '127.0.0.1', '[::1]']
-      .includes(window.location.hostname);
-    const contextoSeguro = window.isSecureContext || hostLocal;
+    const hostLocal = [
+      'localhost',
+      '127.0.0.1',
+      '[::1]'
+    ].includes(window.location.hostname);
 
-    return contextoSeguro && this.obtenerConstructorReconocimiento() !== null;
+    const contextoSeguro =
+      window.isSecureContext || hostLocal;
+
+    return (
+      contextoSeguro &&
+      this.obtenerConstructorReconocimiento() !== null
+    );
+  }
+
+  get hablando(): boolean {
+    if (this.usarLecturaNativa()) {
+      return this.hablandoNativo;
+    }
+
+    const sintetizador = this.obtenerSintetizador();
+
+    return (
+      sintetizador?.speaking === true ||
+      sintetizador?.pending === true
+    );
   }
 
   hablar(
     texto: string,
     idioma: Idioma,
-    alFinalizar?: () => void
+    alFinalizar?: () => void,
+    interrumpir = true,
+    duracionObjetivoMs?: number
   ): boolean {
+    if (this.usarLecturaNativa()) {
+      return this.hablarNativo(
+        texto,
+        idioma,
+        alFinalizar,
+        interrumpir,
+        duracionObjetivoMs
+      );
+    }
+
     const sintetizador = this.obtenerSintetizador();
 
     if (
@@ -108,18 +179,26 @@ export class AsistenteVozService {
     }
 
     const secuenciaActual = ++this.secuencia;
-    sintetizador.cancel();
+
+    if (interrumpir) {
+      sintetizador.cancel();
+    }
 
     const indicacion = new SpeechSynthesisUtterance(texto);
     const etiquetaIdioma = ETIQUETAS_VOZ[idioma];
-    indicacion.lang = etiquetaIdioma;
-    indicacion.rate = 0.92;
-    indicacion.pitch = 1;
 
-    const voz = sintetizador.getVoices().find(
-      disponible => disponible.lang
-        .toLocaleLowerCase()
-        .startsWith(etiquetaIdioma.slice(0, 2))
+    indicacion.lang = etiquetaIdioma;
+    indicacion.rate = this.calcularVelocidadVoz(
+      texto,
+      duracionObjetivoMs
+    );
+    indicacion.pitch = 1;
+    indicacion.volume = 1;
+
+    const voz = sintetizador.getVoices().find(disponible =>
+      disponible.lang.toLocaleLowerCase().startsWith(
+        etiquetaIdioma.slice(0, 2).toLocaleLowerCase()
+      )
     );
 
     if (voz) {
@@ -133,11 +212,38 @@ export class AsistenteVozService {
     };
 
     sintetizador.speak(indicacion);
+
     return true;
+  }
+
+  duracionCursorRecomendada(texto: string): number {
+    const palabras = this.contarPalabras(texto);
+
+    if (palabras === 0) {
+      return 0;
+    }
+
+    const palabrasPorSegundo = 2.4;
+    const velocidadBase = 0.92;
+
+    const duracionEstimada =
+      (palabras / (palabrasPorSegundo * velocidadBase)) * 1000;
+
+    return Math.min(
+      7200,
+      Math.max(2600, duracionEstimada + 480)
+    );
   }
 
   detener(): void {
     this.secuencia++;
+    this.hablandoNativo = false;
+    this.lecturaNativaPendiente = Promise.resolve();
+
+    if (this.usarLecturaNativa()) {
+      void LECTURA_NATIVA.stop().catch(() => undefined);
+    }
+
     this.obtenerSintetizador()?.cancel();
     this.detenerReconocimiento();
   }
@@ -149,11 +255,18 @@ export class AsistenteVozService {
     alFinalizar?: () => void
   ): boolean {
     if (Capacitor.isNativePlatform()) {
-      this.escucharComandoNativo(idioma, alReconocer, alError, alFinalizar);
+      void this.escucharComandoNativo(
+        idioma,
+        alReconocer,
+        alError,
+        alFinalizar
+      );
+
       return true;
     }
 
-    const Constructor = this.obtenerConstructorReconocimiento();
+    const Constructor =
+      this.obtenerConstructorReconocimiento();
 
     if (!Constructor) {
       return false;
@@ -163,26 +276,34 @@ export class AsistenteVozService {
 
     try {
       const reconocimiento = new Constructor();
+
       reconocimiento.lang = ETIQUETAS_VOZ[idioma];
       reconocimiento.interimResults = false;
       reconocimiento.maxAlternatives = 1;
+
       reconocimiento.onresult = evento => {
-        const frase = evento.results[0]?.[0]?.transcript?.trim();
+        const frase =
+          evento.results[0]?.[0]?.transcript?.trim();
 
         if (evento.results[0]?.isFinal && frase) {
           alReconocer(frase);
         }
       };
-      reconocimiento.onerror = evento => alError(evento.error);
+
+      reconocimiento.onerror = evento =>
+        alError(evento.error);
+
       reconocimiento.onend = () => {
         if (this.reconocimiento === reconocimiento) {
           this.reconocimiento = null;
         }
+
         alFinalizar?.();
       };
 
       this.reconocimiento = reconocimiento;
       reconocimiento.start();
+
       return true;
     } catch {
       this.reconocimiento = null;
@@ -197,14 +318,131 @@ export class AsistenteVozService {
     try {
       reconocimiento?.stop();
     } catch {
-      // Algunos navegadores lanzan si el reconocimiento ya había terminado.
     }
 
     if (this.reconocimientoNativoActivo) {
       this.reconocimientoNativoActivo = false;
-      void RECONOCIMIENTO_NATIVO.stop().catch(() => undefined);
+
+      void RECONOCIMIENTO_NATIVO.stop()
+        .catch(() => undefined);
     }
+
     this.quitarListenersNativos();
+  }
+
+  private usarLecturaNativa(): boolean {
+    return (
+      Capacitor.getPlatform() === 'android' &&
+      Capacitor.isPluginAvailable('NavInsideTextToSpeech')
+    );
+  }
+
+  private hablarNativo(
+    texto: string,
+    idioma: Idioma,
+    alFinalizar?: () => void,
+    interrumpir = true,
+    duracionObjetivoMs?: number
+  ): boolean {
+    if (!texto.trim()) {
+      return false;
+    }
+
+    const secuenciaActual = ++this.secuencia;
+    this.hablandoNativo = true;
+
+    const comenzar = async (): Promise<void> => {
+      if (secuenciaActual !== this.secuencia) {
+        return;
+      }
+
+      await LECTURA_NATIVA.speak({
+        text: texto,
+        language: ETIQUETAS_VOZ[idioma],
+        rate: this.calcularVelocidadVoz(
+          texto,
+          duracionObjetivoMs
+        )
+      });
+    };
+
+    const lectura = interrumpir
+      ? comenzar()
+      : this.lecturaNativaPendiente.then(comenzar);
+
+    this.lecturaNativaPendiente = lectura.then(
+      () => {
+        if (secuenciaActual === this.secuencia) {
+          this.hablandoNativo = false;
+          alFinalizar?.();
+        }
+      },
+      (error: unknown) => {
+        if (secuenciaActual !== this.secuencia) {
+          return;
+        }
+
+        this.hablandoNativo = false;
+
+        const codigo =
+          error &&
+          typeof error === 'object' &&
+          'code' in error
+            ? error.code
+            : 'tts-speak-error';
+
+        if (codigo !== 'tts-cancelled') {
+          console.error(
+            'No se pudo reproducir la voz de Android:',
+            error
+          );
+          alFinalizar?.();
+        }
+      }
+    );
+
+    return true;
+  }
+
+  private calcularVelocidadVoz(
+    texto: string,
+    duracionObjetivoMs?: number
+  ): number {
+    const velocidadBase = 0.92;
+
+    if (!duracionObjetivoMs || duracionObjetivoMs <= 0) {
+      return velocidadBase;
+    }
+
+    const palabras = this.contarPalabras(texto);
+
+    if (palabras === 0) {
+      return velocidadBase;
+    }
+
+    const duracionEstimada = (palabras / 2.4) * 1000;
+    const ventanaVoz = Math.max(
+      1200,
+      duracionObjetivoMs * 0.84
+    );
+
+    const velocidadNecesaria =
+      duracionEstimada / ventanaVoz;
+
+    return Math.min(
+      1.25,
+      Math.max(velocidadBase, velocidadNecesaria)
+    );
+  }
+
+  private contarPalabras(texto: string): number {
+    const textoLimpio = texto.trim();
+
+    if (!textoLimpio) {
+      return 0;
+    }
+
+    return textoLimpio.split(/\s+/).filter(Boolean).length;
   }
 
   private obtenerSintetizador(): SpeechSynthesis | null {
@@ -218,16 +456,20 @@ export class AsistenteVozService {
     return window.speechSynthesis;
   }
 
-  private obtenerConstructorReconocimiento(): ConstructorReconocimiento | null {
+  private obtenerConstructorReconocimiento():
+    ConstructorReconocimiento | null {
     if (typeof window === 'undefined') {
       return null;
     }
 
-    const navegador = window as NavegadorConReconocimiento;
+    const navegador =
+      window as NavegadorConReconocimiento;
 
-    return navegador.SpeechRecognition ??
+    return (
+      navegador.SpeechRecognition ??
       navegador.webkitSpeechRecognition ??
-      null;
+      null
+    );
   }
 
   private async escucharComandoNativo(
@@ -241,29 +483,46 @@ export class AsistenteVozService {
 
     try {
       this.listenersNativos = await Promise.all([
-        RECONOCIMIENTO_NATIVO.addListener('result', evento => {
-          const frase = evento.transcript?.trim();
-          this.reconocimientoNativoActivo = false;
-          if (frase) alReconocer(frase);
-          alFinalizar?.();
-          this.quitarListenersNativos();
-        }),
-        RECONOCIMIENTO_NATIVO.addListener('error', evento => {
-          this.reconocimientoNativoActivo = false;
-          alError(evento.code ?? 'recognition-error');
-          alFinalizar?.();
-          this.quitarListenersNativos();
-        })
+        RECONOCIMIENTO_NATIVO.addListener(
+          'result',
+          evento => {
+            const frase = evento.transcript?.trim();
+            this.reconocimientoNativoActivo = false;
+
+            if (frase) {
+              alReconocer(frase);
+            }
+
+            alFinalizar?.();
+            this.quitarListenersNativos();
+          }
+        ),
+        RECONOCIMIENTO_NATIVO.addListener(
+          'error',
+          evento => {
+            this.reconocimientoNativoActivo = false;
+
+            alError(evento.code ?? 'recognition-error');
+            alFinalizar?.();
+            this.quitarListenersNativos();
+          }
+        )
       ]);
+
       await RECONOCIMIENTO_NATIVO.start({
         language: ETIQUETAS_VOZ[idioma]
       });
     } catch (error) {
       this.reconocimientoNativoActivo = false;
-      const codigo = error && typeof error === 'object' && 'code' in error &&
+
+      const codigo =
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
         typeof error.code === 'string'
-        ? error.code
-        : 'recognition-error';
+          ? error.code
+          : 'recognition-error';
+
       alError(codigo);
       alFinalizar?.();
       this.quitarListenersNativos();
@@ -273,6 +532,7 @@ export class AsistenteVozService {
   private quitarListenersNativos(): void {
     const listeners = this.listenersNativos;
     this.listenersNativos = [];
+
     for (const listener of listeners) {
       void listener.remove();
     }

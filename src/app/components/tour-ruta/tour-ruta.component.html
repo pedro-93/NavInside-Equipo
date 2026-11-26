@@ -1,0 +1,35 @@
+<section class="tour-ruta" [attr.aria-label]="textos.titulo">
+  <div class="tour-ruta__datos">
+    <p class="tour-ruta__paso">{{ textos.parada }} {{ numero }} / {{ total }}</p>
+    <h3 aria-live="polite">{{ nombre }}</h3>
+    @if (panorama; as enlace) {
+      <a [href]="enlace" target="_blank" rel="noopener noreferrer">
+        {{ textos.abrirPanorama }}
+      </a>
+    }
+  </div>
+
+  <div class="tour-ruta__vista">
+    @if (miniatura; as url) {
+      <img
+        [src]="url"
+        [alt]="fotos[indiceFoto]?.alt || nombre"
+        decoding="async"
+        referrerpolicy="no-referrer"
+        (error)="miniaturaFallida = true"
+      />
+      <small>{{ fuenteFoto }}</small>
+    } @else {
+      <p class="tour-ruta__referencia">{{ textos.referencia }}</p>
+    }
+    @if (fotos.length > 1) {
+      <div class="tour-ruta__galeria" role="group"
+        [attr.aria-label]="idioma === 'en' ? 'Photographs' : idioma === 'pt' ? 'Fotografias' : 'Fotografías'">
+        @for (foto of fotos; track foto.src; let indice = $index) {
+          <button type="button" (click)="cambiarFoto(indice)" [attr.aria-pressed]="indiceFoto === indice"
+            [attr.aria-label]="foto.alt"><img [src]="foto.src" alt="" loading="lazy" /></button>
+        }
+      </div>
+    }
+  </div>
+</section>

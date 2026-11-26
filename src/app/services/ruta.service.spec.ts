@@ -99,7 +99,7 @@ describe(
           ruta
         )
       ).toBeCloseTo(
-        18.877,
+        101.754,
         3
       );
     });
@@ -115,7 +115,7 @@ describe(
       expect(ruta).toEqual([]);
     });
 
-    it('conecta el nivel 1 con el Piso 6', () => {
+    it('conecta el nivel 1 con Masajes en Piso 6 y mantiene pendiente la distancia individual a la puerta', () => {
       const ruta =
         servicio.calcularRuta(
           'hall-nivel-1',
@@ -139,10 +139,7 @@ describe(
         servicio.calcularDistanciaTotal(
           ruta
         )
-      ).toBeCloseTo(
-        90.42,
-        3
-      );
+      ).toBe(Infinity);
     });
 
     it('genera pasos de cambio de nivel por ascensor', () => {
@@ -167,6 +164,21 @@ describe(
 
       expect(cambio?.direccionNivel)
         .toBe('bajar');
+    });
+
+    it.each([
+      ['hall-nivel-1', 'ascensor-central-nivel-1'],
+      ['ascensor-central-nivel-3', 'ascensor-central-nivel-3']
+    ])('baja del Lobby hacia %s por los ascensores centrales', (destino, ascensor) => {
+      const ruta = servicio.calcularRuta('lobby-nivel-4', destino);
+      expect(ruta.at(-1)?.id).toBe(destino);
+      expect(ruta[1]?.id).toBe('ascensor-central-nivel-4');
+      expect(servicio.generarPasos(ruta)).toContainEqual(expect.objectContaining({
+        tipo: 'cambio-nivel',
+        nodo: expect.objectContaining({ id: ascensor }),
+        medio: 'ascensor',
+        direccionNivel: 'bajar'
+      }));
     });
   }
 );

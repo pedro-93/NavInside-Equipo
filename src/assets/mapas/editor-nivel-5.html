@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Editor Nivel 5</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#E9ECEF;--floor:#FFFBF4;--wall:#4F5D6E;--ink:#1F2933;--muted:#6B7785;--sheet:#FFFFFF;--line:#D5DAE0;--acc:#1A73E8;--door:#0E9DAB;--salon:rgba(231,179,95,.18);--sel:#F59E0B}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171B20;--floor:#2A3038;--wall:#9AA7B4;--ink:#ECEFF2;--muted:#A3AEB9;--sheet:#22272E;--line:#39414A;--salon:rgba(231,179,95,.14)}}
+:root[data-theme="dark"]{--bg:#171B20;--floor:#2A3038;--wall:#9AA7B4;--ink:#ECEFF2;--muted:#A3AEB9;--sheet:#22272E;--line:#39414A;--salon:rgba(231,179,95,.14)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:'Barlow Semi Condensed',system-ui,Arial,sans-serif;overflow:hidden;touch-action:none}
+#app{display:flex;flex-direction:column;height:100%}
+header{padding:10px 16px 6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+header h1{margin:0;font-size:20px;font-weight:700}
+header p{margin:0;font-size:13px;color:var(--muted);flex-basis:100%}
+#lienzo{flex:1;min-height:0;position:relative}
+svg{width:100%;height:100%;display:block;user-select:none;-webkit-user-select:none}
+.grid line{stroke:var(--line);stroke-width:1}
+.piso{fill:var(--floor)}
+.contorno{fill:none;stroke:var(--wall);stroke-width:14;stroke-linejoin:miter}
+.contorno-hit{fill:none;stroke:transparent;stroke-width:40;cursor:copy}
+.muro{stroke:var(--wall);stroke-width:10;stroke-linecap:square}
+.muro-hit{stroke:transparent;stroke-width:44;cursor:move}
+.muro.sel{stroke:var(--sel)}
+.vert{fill:var(--sheet);stroke:var(--acc);stroke-width:4;cursor:grab}
+.vert.sel{fill:var(--sel);stroke:var(--sel)}
+.asc rect.caja{fill:var(--sheet);stroke:var(--wall);stroke-width:10}
+.asc .x{stroke:var(--wall);stroke-width:3;opacity:.45}
+.asc .puerta{stroke:var(--door);stroke-width:12;stroke-dasharray:16 9}
+.asc .flecha{fill:var(--door)}
+.asc text{font:700 26px 'Barlow Semi Condensed',Arial;fill:var(--muted);text-anchor:middle;dominant-baseline:central;letter-spacing:.06em}
+.asc{cursor:move}
+.asc.sel rect.caja{stroke:var(--sel)}
+.salon{fill:var(--salon)}
+.salon-txt{font:700 40px 'Barlow Semi Condensed',Arial;fill:#8A5A1E;text-anchor:middle;letter-spacing:.08em;pointer-events:none}
+.psalon line{stroke:var(--door);stroke-width:8;stroke-linecap:round}
+.psalon path{fill:none;stroke:var(--door);stroke-width:3;stroke-dasharray:8 6}
+.psalon{cursor:move}
+.psalon.sel line{stroke:var(--sel)}
+#barra{padding:8px 12px calc(10px + env(safe-area-inset-bottom));background:var(--sheet);border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+#info{font-size:14px;color:var(--muted);min-height:18px}
+.fila{display:flex;gap:8px;flex-wrap:wrap}
+button{font:600 15px 'Barlow Semi Condensed',Arial;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:9px 12px;min-height:42px;cursor:pointer}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+button:disabled{opacity:.4;cursor:default}
+#toast{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:var(--ink);color:var(--sheet);padding:8px 14px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
+#toast.on{opacity:.92}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>Editor · Nivel 5</h1>
+    <p>Arrastra los puntos azules para mover muros. Toca un ascensor para girar su puerta. Doble toque sobre el contorno agrega una esquina.</p>
+  </header>
+  <div id="lienzo">
+    <svg id="svg" viewBox="80 80 1640 1600" preserveAspectRatio="xMidYMid meet" aria-label="Plano editable del nivel 5"></svg>
+    <div id="toast"></div>
+  </div>
+  <div id="barra">
+    <div id="info">Toca un elemento para seleccionarlo.</div>
+    <div class="fila" id="acciones"></div>
+    <div class="fila">
+      <button id="bMuro">＋ Muro</button>
+      <button id="bDeshacer">↶ Deshacer</button>
+      <button id="bReset">Restablecer</button>
+      <button id="bListo" class="pri">✓ Diseño listo</button>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg", CLAVE = "navinside-editor-nivel5", SNAP = 20, LADOS = ["arriba", "derecha", "abajo", "izquierda"];
+  var INICIAL = {
+    contorno: [[200,180],[760,180],[760,280],[1020,280],[1020,540],[1600,540],[1600,1060],[1180,1060],[1180,1320],[920,1320],[920,1560],[200,1560]],
+    muros: [[[1020,540],[1020,680]], [[1020,920],[1020,1060]]],
+    ascensores: [
+      { id: "e1", nombre: "ASCENSOR 1", x: 760, y: 280, lado: 260, puerta: "abajo" },
+      { id: "e2", nombre: "ASCENSOR 2", x: 920, y: 1060, lado: 260, puerta: "izquierda" }
+    ],
+    salon: { x1: 1020, y1: 540, x2: 1600, y2: 1060 },
+    puertaSalon: { x: 1020, y: 800, largo: 240, vertical: true }
+  };
+  var copia = function (o) { return JSON.parse(JSON.stringify(o)); };
+  var D, hist = [], sel = null;
+  try { D = JSON.parse(localStorage.getItem(CLAVE)) || copia(INICIAL); } catch (e) { D = copia(INICIAL); }
+  if (!D || !D.contorno) D = copia(INICIAL);
+
+  var svg = document.getElementById("svg");
+  var el = function (t, a, p) { var e = document.createElementNS(NS, t); for (var k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+  var snap = function (v) { return Math.round(v / SNAP) * SNAP; };
+  var guardar = function () { try { localStorage.setItem(CLAVE, JSON.stringify(D)); } catch (e) {} };
+  var marcar = function () { hist.push(JSON.stringify(D)); if (hist.length > 60) hist.shift(); };
+  var toastT;
+  function toast(t) { var x = document.getElementById("toast"); x.textContent = t; x.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(function () { x.classList.remove("on"); }, 1600); }
+  function punto(ev) { var p = svg.createSVGPoint(); p.x = ev.clientX; p.y = ev.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); }
+
+  function puertaAsc(a) {
+    var m = a.lado * 0.2, x1 = a.x, y1 = a.y, x2 = a.x + a.lado, y2 = a.y + a.lado;
+    switch (a.puerta) {
+      case "arriba": return [[x1 + m, y1], [x2 - m, y1], [0, -1]];
+      case "derecha": return [[x2, y1 + m], [x2, y2 - m], [1, 0]];
+      case "abajo": return [[x1 + m, y2], [x2 - m, y2], [0, 1]];
+      default: return [[x1, y1 + m], [x1, y2 - m], [-1, 0]];
+    }
+  }
+  function dibujar() {
+    svg.innerHTML = "";
+    var g = el("g", { "class": "grid" }, svg);
+    for (var x = 80; x <= 1720; x += 40) el("line", { x1: x, y1: 80, x2: x, y2: 1680, opacity: x % 200 === 0 ? .9 : .35 }, g);
+    for (var y = 80; y <= 1680; y += 40) el("line", { x1: 80, y1: y, x2: 1720, y2: y, opacity: y % 200 === 0 ? .9 : .35 }, g);
+    var pts = D.contorno.map(function (p) { return p.join(","); }).join(" ");
+    el("polygon", { points: pts, "class": "piso" }, svg);
+    var s = D.salon;
+    el("rect", { x: Math.min(s.x1, s.x2), y: Math.min(s.y1, s.y2), width: Math.abs(s.x2 - s.x1), height: Math.abs(s.y2 - s.y1), "class": "salon" }, svg);
+    var st = el("text", { x: (s.x1 + s.x2) / 2, y: Math.max(s.y1, s.y2) - 60, "class": "salon-txt" }, svg); st.textContent = "SALÓN COSTAMAR";
+    el("polygon", { points: pts, "class": "contorno" }, svg);
+    D.muros.forEach(function (m, i) {
+      el("line", { x1: m[0][0], y1: m[0][1], x2: m[1][0], y2: m[1][1], "class": "muro" + (sel && sel.t === "muro" && sel.i === i ? " sel" : "") }, svg);
+      var h = el("line", { x1: m[0][0], y1: m[0][1], x2: m[1][0], y2: m[1][1], "class": "muro-hit" }, svg);
+      arrastrable(h, { t: "muro", i: i });
+    });
+    var ps = D.puertaSalon, gp = el("g", { "class": "psalon" + (sel && sel.t === "psalon" ? " sel" : "") }, svg), L = ps.largo / 2;
+    if (ps.vertical) {
+      el("line", { x1: ps.x, y1: ps.y - L, x2: ps.x + L * .9, y2: ps.y - L }, gp); el("line", { x1: ps.x, y1: ps.y + L, x2: ps.x + L * .9, y2: ps.y + L }, gp);
+      el("path", { d: "M" + (ps.x + L * .9) + " " + (ps.y - L) + "A" + L + " " + L + " 0 0 1 " + ps.x + " " + ps.y + "M" + (ps.x + L * .9) + " " + (ps.y + L) + "A" + L + " " + L + " 0 0 0 " + ps.x + " " + ps.y }, gp);
+    } else {
+      el("line", { x1: ps.x - L, y1: ps.y, x2: ps.x - L, y2: ps.y + L * .9 }, gp); el("line", { x1: ps.x + L, y1: ps.y, x2: ps.x + L, y2: ps.y + L * .9 }, gp);
+      el("path", { d: "M" + (ps.x - L) + " " + (ps.y + L * .9) + "A" + L + " " + L + " 0 0 0 " + ps.x + " " + ps.y + "M" + (ps.x + L) + " " + (ps.y + L * .9) + "A" + L + " " + L + " 0 0 1 " + ps.x + " " + ps.y }, gp);
+    }
+    el("rect", { x: ps.x - L, y: ps.y - L, width: ps.largo, height: ps.largo, fill: "transparent" }, gp);
+    arrastrable(gp, { t: "psalon" });
+    D.ascensores.forEach(function (a, i) {
+      var ga = el("g", { "class": "asc" + (sel && sel.t === "asc" && sel.i === i ? " sel" : "") }, svg);
+      el("rect", { x: a.x, y: a.y, width: a.lado, height: a.lado, "class": "caja" }, ga);
+      var q = a.lado * 0.15;
+      el("path", { d: "M" + (a.x + q) + " " + (a.y + q) + "L" + (a.x + a.lado - q) + " " + (a.y + a.lado - q) + "M" + (a.x + a.lado - q) + " " + (a.y + q) + "L" + (a.x + q) + " " + (a.y + a.lado - q), "class": "x" }, ga);
+      var pu = puertaAsc(a);
+      el("line", { x1: pu[0][0], y1: pu[0][1], x2: pu[1][0], y2: pu[1][1], stroke: "var(--floor)", "stroke-width": 14 }, ga);
+      el("line", { x1: pu[0][0], y1: pu[0][1], x2: pu[1][0], y2: pu[1][1], "class": "puerta" }, ga);
+      var cx = (pu[0][0] + pu[1][0]) / 2 + pu[2][0] * 34, cy = (pu[0][1] + pu[1][1]) / 2 + pu[2][1] * 34, ang = Math.atan2(pu[2][1], pu[2][0]) * 180 / Math.PI;
+      el("path", { d: "M18 0 L-10 -14 L-10 14Z", "class": "flecha", transform: "translate(" + cx + " " + cy + ") rotate(" + ang + ")" }, ga);
+      var tx = el("text", { x: a.x + a.lado / 2, y: a.y + a.lado / 2 }, ga); tx.textContent = a.nombre;
+      arrastrable(ga, { t: "asc", i: i });
+    });
+    var hit = el("polygon", { points: pts, "class": "contorno-hit" }, svg);
+    hit.addEventListener("dblclick", agregarVertice);
+    var ultimoToque = 0;
+    hit.addEventListener("pointerup", function (ev) { var t = Date.now(); if (t - ultimoToque < 350) agregarVertice(ev); ultimoToque = t; });
+    D.contorno.forEach(function (p, i) {
+      var v = el("circle", { cx: p[0], cy: p[1], r: 20, "class": "vert" + (sel && sel.t === "vert" && sel.i === i ? " sel" : "") }, svg);
+      arrastrable(v, { t: "vert", i: i });
+    });
+    D.muros.forEach(function (m, i) {
+      [0, 1].forEach(function (k) {
+        var v = el("circle", { cx: m[k][0], cy: m[k][1], r: 18, "class": "vert" + (sel && sel.t === "muro" && sel.i === i ? " sel" : "") }, svg);
+        arrastrable(v, { t: "extremo", i: i, k: k });
+      });
+    });
+    acciones();
+  }
+
+  function arrastrable(nodo, ref) {
+    nodo.addEventListener("pointerdown", function (ev) {
+      ev.stopPropagation(); ev.preventDefault();
+      var p0 = punto(ev), movido = false, antes = JSON.stringify(D), base = copia(D);
+      sel = ref.t === "extremo" ? { t: "muro", i: ref.i } : { t: ref.t, i: ref.i };
+      nodo.setPointerCapture && nodo.setPointerCapture(ev.pointerId);
+      function mover(e) {
+        var p = punto(e), dx = snap(p.x - p0.x), dy = snap(p.y - p0.y);
+        if (!dx && !dy && !movido) return;
+        movido = true;
+        if (ref.t === "vert") D.contorno[ref.i] = [snap(base.contorno[ref.i][0] + dx), snap(base.contorno[ref.i][1] + dy)];
+        else if (ref.t === "extremo") D.muros[ref.i][ref.k] = [snap(base.muros[ref.i][ref.k][0] + dx), snap(base.muros[ref.i][ref.k][1] + dy)];
+        else if (ref.t === "muro") D.muros[ref.i] = base.muros[ref.i].map(function (q) { return [q[0] + dx, q[1] + dy]; });
+        else if (ref.t === "asc") { D.ascensores[ref.i].x = base.ascensores[ref.i].x + dx; D.ascensores[ref.i].y = base.ascensores[ref.i].y + dy; }
+        else if (ref.t === "psalon") { D.puertaSalon.x = base.puertaSalon.x + dx; D.puertaSalon.y = base.puertaSalon.y + dy; }
+        dibujar();
+      }
+      function soltar() {
+        window.removeEventListener("pointermove", mover); window.removeEventListener("pointerup", soltar); window.removeEventListener("pointercancel", soltar);
+        if (movido) { hist.push(antes); guardar(); }
+        dibujar();
+      }
+      window.addEventListener("pointermove", mover); window.addEventListener("pointerup", soltar); window.addEventListener("pointercancel", soltar);
+      dibujar();
+    });
+  }
+  svg.addEventListener("pointerdown", function () { if (sel) { sel = null; dibujar(); } });
+
+  function agregarVertice(ev) {
+    var p = punto(ev), mejor = -1, md = Infinity, C = D.contorno;
+    for (var i = 0; i < C.length; i++) {
+      var a = C[i], b = C[(i + 1) % C.length], dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy;
+      var t = l2 ? Math.max(0, Math.min(1, ((p.x - a[0]) * dx + (p.y - a[1]) * dy) / l2)) : 0;
+      var d = Math.hypot(p.x - a[0] - t * dx, p.y - a[1] - t * dy);
+      if (d < md) { md = d; mejor = i; }
+    }
+    if (mejor < 0 || md > 60) return;
+    marcar(); C.splice(mejor + 1, 0, [snap(p.x), snap(p.y)]);
+    sel = { t: "vert", i: mejor + 1 }; guardar(); dibujar(); toast("Esquina agregada");
+  }
+
+  function acciones() {
+    var box = document.getElementById("acciones"), info = document.getElementById("info");
+    box.innerHTML = "";
+    var b = function (txt, fn, pri) { var x = document.createElement("button"); x.textContent = txt; if (pri) x.className = "pri"; x.onclick = function () { marcar(); fn(); guardar(); dibujar(); }; box.appendChild(x); };
+    if (!sel) { info.textContent = "Toca un elemento para seleccionarlo. Arrastra para moverlo."; return; }
+    if (sel.t === "asc") {
+      var a = D.ascensores[sel.i];
+      info.textContent = a.nombre + " · puerta hacia " + a.puerta + ". Arrástralo para moverlo.";
+      b("↻ Girar puerta", function () { a.puerta = LADOS[(LADOS.indexOf(a.puerta) + 1) % 4]; }, true);
+      b("↺ Girar al revés", function () { a.puerta = LADOS[(LADOS.indexOf(a.puerta) + 3) % 4]; });
+    } else if (sel.t === "muro") {
+      info.textContent = "Muro interior. Arrastra sus puntos o el muro completo.";
+      b("🗑 Eliminar muro", function () { D.muros.splice(sel.i, 1); sel = null; });
+    } else if (sel.t === "vert") {
+      info.textContent = "Esquina del contorno del edificio. Arrástrala para mover las paredes.";
+      if (D.contorno.length > 3) b("🗑 Quitar esquina", function () { D.contorno.splice(sel.i, 1); sel = null; });
+    } else if (sel.t === "psalon") {
+      info.textContent = "Puerta del Salón CostaMar. Arrástrala a su lugar.";
+      b("↻ Girar puerta", function () { D.puertaSalon.vertical = !D.puertaSalon.vertical; }, true);
+    }
+  }
+
+  document.getElementById("bMuro").onclick = function () { marcar(); D.muros.push([[700, 860], [900, 860]]); sel = { t: "muro", i: D.muros.length - 1 }; guardar(); dibujar(); toast("Muro nuevo en el centro"); };
+  document.getElementById("bDeshacer").onclick = function () { if (!hist.length) return toast("Nada que deshacer"); D = JSON.parse(hist.pop()); sel = null; guardar(); dibujar(); };
+  document.getElementById("bReset").onclick = function () { if (!confirm("¿Volver al diseño original del nivel 5?")) return; marcar(); D = copia(INICIAL); sel = null; guardar(); dibujar(); };
+  document.getElementById("bListo").onclick = function () { D.listo = new Date().toISOString(); guardar(); toast("Guardado. Avisa al equipo que el diseño está listo."); };
+  window.disenoNivel5 = function () { return copia(D); };
+  dibujar();
+})();
+</script>
+</body>
+</html>
